@@ -34,6 +34,15 @@ const routes: RouteRecordRaw[] = [
           title: '用户管理',
           icon: 'user'
         }
+      },
+      {
+        path: 'test-management',
+        name: 'TestManagement',
+        component: () => import('@/views/test-management/index.vue'),
+        meta: {
+          title: '测试管理',
+          icon: 'user'
+        }
       }
     ]
   },

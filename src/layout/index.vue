@@ -123,6 +123,11 @@ const menuItems = [
     key: 'UserManagement',
     icon: () => h(UserOutlined),
     label: '用户管理'
+  },
+  {
+    key: 'TestManagement',
+    icon: () => h(UserOutlined),
+    label: '测试列表'
   }
 ]
 
