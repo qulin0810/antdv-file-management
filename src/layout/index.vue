@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h } from 'vue'
+import { ref, computed, h, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   MenuUnfoldOutlined,
@@ -100,6 +100,13 @@ const route = useRoute()
 const router = useRouter()
 const collapsed = ref(false)
 const selectedKeys = ref<string[]>([route.name as string])
+
+// 监听路由变化更新选中菜单
+watch(() => route.name, (newName) => {
+  if (newName) {
+    selectedKeys.value = [newName as string]
+  }
+})
 
 const menuItems = [
   {

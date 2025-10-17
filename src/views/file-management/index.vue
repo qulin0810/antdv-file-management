@@ -45,9 +45,9 @@
             <template #icon><upload-outlined /></template>
             上传文件
           </a-button>
-          <a-button @click="handleCreateFolder">
+          <a-button type="primary" @click="handleCreateFolder">
             <template #icon><folder-add-outlined /></template>
-            新建文件夹
+            新建文件
           </a-button>
         </a-space>
       </div>
@@ -80,6 +80,9 @@
           </template>
           <template v-else-if="column.key === 'author'">
             {{ record.author }}
+          </template>
+          <template v-else-if="column.key === 'department'">
+            {{ getDepartmentName(record.department) }}
           </template>
           <template v-else-if="column.key === 'updateTime'">
             {{ record.updateTime }}
@@ -124,6 +127,13 @@
         <p class="ant-upload-hint">支持单个或批量上传</p>
       </a-upload-dragger>
     </a-modal>
+
+    <!-- 文件表单模态框 -->
+    <FileFormModal
+      v-model:visible="formVisible"
+      :edit-data="editData"
+      @submit="handleFormSubmit"
+    />
   </div>
 </template>
 
@@ -141,6 +151,7 @@ import {
   InboxOutlined
 } from '@ant-design/icons-vue'
 import type { UploadProps } from 'ant-design-vue'
+import FileFormModal from '../../components/FileFormModal.vue'
 
 interface FileItem {
   key: string
@@ -149,12 +160,16 @@ interface FileItem {
   size: string
   author: string
   updateTime: string
+  department?: string
+  description?: string
 }
 
 const searchFormRef = ref()
 const loading = ref(false)
 const uploadVisible = ref(false)
+const formVisible = ref(false)
 const uploadFileList = ref<UploadFile[]>([])
+const editData = ref<any>(null)
 
 const searchForm = reactive({
   fileName: '',
@@ -175,7 +190,7 @@ const columns = [
     title: '文件名',
     dataIndex: 'name',
     key: 'name',
-    width: '40%'
+    width: '30%'
   },
   {
     title: '大小',
@@ -190,10 +205,16 @@ const columns = [
     width: '15%'
   },
   {
+    title: '所属部门',
+    dataIndex: 'department',
+    key: 'department',
+    width: '15%'
+  },
+  {
     title: '更新时间',
     dataIndex: 'updateTime',
     key: 'updateTime',
-    width: '20%'
+    width: '15%'
   },
   {
     title: '操作',
@@ -256,12 +277,13 @@ const handleUpload = () => {
 }
 
 const handleCreateFolder = () => {
-  // 创建文件夹逻辑
-  console.log('创建文件夹')
+  editData.value = null
+  formVisible.value = true
 }
 
 const handleEdit = (record: FileItem) => {
-  console.log('编辑文件:', record)
+  editData.value = record
+  formVisible.value = true
 }
 
 const handleDownload = (record: FileItem) => {
@@ -289,6 +311,59 @@ const handleUploadCancel = () => {
 const beforeUpload: UploadProps['beforeUpload'] = (file) => {
   console.log('上传文件:', file)
   return false // 阻止自动上传
+}
+
+const handleFormSubmit = (formData: any) => {
+  if (editData.value) {
+    // 编辑模式
+    const index = fileList.value.findIndex(item => item.key === editData.value.key)
+    if (index !== -1) {
+      fileList.value[index] = {
+        ...fileList.value[index],
+        name: formData.name,
+        type: formData.type as 'file' | 'folder',
+        department: formData.department,
+        description: formData.description,
+        updateTime: new Date().toLocaleString('zh-CN')
+      }
+    }
+  } else {
+    // 新建模式
+    const newItem: FileItem = {
+      key: Date.now().toString(),
+      name: formData.name,
+      type: formData.type as 'file' | 'folder',
+      size: formData.file ? getFileSize(formData.file.size) : '0 KB',
+      author: '当前用户', // 这里应该从用户信息获取
+      updateTime: new Date().toLocaleString('zh-CN'),
+      department: formData.department,
+      description: formData.description
+    }
+    fileList.value.unshift(newItem)
+  }
+  
+  // 更新分页总数
+  pagination.total = fileList.value.length
+}
+
+const getFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 KB'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+const getDepartmentName = (department: string): string => {
+  const departmentMap: Record<string, string> = {
+    'tech': '技术部',
+    'design': '设计部',
+    'product': '产品部',
+    'marketing': '市场部',
+    'hr': '人力资源部',
+    'finance': '财务部'
+  }
+  return departmentMap[department] || department
 }
 
 // 初始化加载数据
