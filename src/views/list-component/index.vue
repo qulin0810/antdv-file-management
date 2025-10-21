@@ -48,8 +48,18 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
-import AntBasicTable from '../list-component/component/BasicTable.vue';
-import type { AntTableConfig } from '../list-component/component/type';
+import AntBasicTable from './component/BasicTable.vue';
+import type { AntTableConfig, TableData } from './component/type/index';
+
+interface UserData extends TableData {
+  id: number;
+  name: string;
+  age: number;
+  status: 'active' | 'inactive' | 'deleted';
+  email: string;
+  department: string;
+  joinDate: string;
+}
 
 const tableRef = ref();
 
@@ -64,7 +74,7 @@ const pagination = reactive({
   total: 0,
 });
 
-const tableData = ref<any[]>([]);
+const tableData = ref<UserData[]>([]);
 
 const tableConfig: AntTableConfig = {
   loading: false,
@@ -90,7 +100,7 @@ const tableConfig: AntTableConfig = {
       key: 'age',
       width: 80,
       align: 'center',
-      sorter: (a: any, b: any) => a.age - b.age,
+      sorter: (a: UserData, b: UserData) => a.age - b.age,
     },
     {
       title: '状态',
@@ -98,6 +108,13 @@ const tableConfig: AntTableConfig = {
       key: 'status',
       width: 100,
       slotName: 'statusSlot',
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      type: 'switch',
     },
     {
       title: '邮箱',
@@ -139,20 +156,20 @@ const tableConfig: AntTableConfig = {
         {
           title: '查看',
           type: 'link',
-          onClick: (record: any) => handleView(record),
-          visible: (record: any) => record.status !== 'deleted',
+          onClick: (record: UserData) => handleView(record),
+          visible: (record: UserData) => record.status !== 'deleted',
         },
         {
           title: '编辑',
           type: 'primary',
-          onClick: (record: any) => handleEdit(record),
-          disabled: (record: any) => record.status === 'deleted',
+          onClick: (record: UserData) => handleEdit(record),
+          disabled: (record: UserData) => record.status === 'deleted',
         },
         {
           title: '删除',
           type: 'danger',
-          onClick: (record: any) => handleDelete(record),
-          visible: (record: any) => record.status !== 'deleted',
+          onClick: (record: UserData) => handleDelete(record),
+          visible: (record: UserData) => record.status !== 'deleted',
         },
       ],
     },
@@ -166,7 +183,7 @@ const tableConfig: AntTableConfig = {
   ],
 };
 
-const mockData = [
+const mockData: UserData[] = [
   {
     id: 1,
     name: '张三',
@@ -274,19 +291,19 @@ const handleCellEvent = (type: string, value: any, record: any, dataIndex: strin
   }
 };
 
-const handleView = (record: any) => {
+const handleView = (record: UserData) => {
   message.info(`查看: ${record.name}`);
 };
 
-const handleEdit = (record: any) => {
+const handleEdit = (record: UserData) => {
   message.info(`编辑: ${record.name}`);
 };
 
-const handleDelete = (record: any) => {
+const handleDelete = (record: UserData) => {
   message.warning(`删除: ${record.name}`);
 };
 
-const handleCustomAction = (record: any) => {
+const handleCustomAction = (record: UserData) => {
   message.success(`自定义操作: ${record.name}`);
 };
 </script>
@@ -307,4 +324,3 @@ const handleCustomAction = (record: any) => {
   border-radius: 6px;
 }
 </style>
-

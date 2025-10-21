@@ -128,6 +128,11 @@ const menuItems = [
     key: 'TestManagement',
     icon: () => h(UserOutlined),
     label: '测试列表'
+  },
+  {
+    key: 'FileComponent',
+    icon: () => h(UserOutlined),
+    label: '组件列表'
   }
 ]
 
