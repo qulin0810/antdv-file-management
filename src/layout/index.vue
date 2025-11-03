@@ -132,7 +132,25 @@ const menuItems = [
   {
     key: 'FileComponent',
     icon: () => h(UserOutlined),
-    label: '组件列表'
+    label: '组件列表',
+    children: [
+      {
+        key: 'ComponentOverview',
+        label: '组件概览'
+      },
+      {
+        key: 'BasicTableDemo',
+        label: '基础表格'
+      },
+      {
+        key: 'SwitchDemo',
+        label: 'Switch演示'
+      },
+      {
+        key: 'FormModalDemo',
+        label: '表单弹窗'
+      }
+    ]
   }
 ]
 

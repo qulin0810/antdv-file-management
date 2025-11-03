@@ -52,6 +52,40 @@ const routes: RouteRecordRaw[] = [
                     title: "组件list管理",
                     icon: "user",
                 },
+                children: [
+                    {
+                        path: "",
+                        name: "ComponentOverview",
+                        component: () => import("@/views/list-component/index.vue"),
+                        meta: {
+                            title: "组件列表",
+                        },
+                    },
+                    {
+                        path: "basic-table",
+                        name: "BasicTableDemo",
+                        component: () => import("@/views/list-component/basic-table/index.vue"),
+                        meta: {
+                            title: "基础表格演示",
+                        },
+                    },
+                    {
+                        path: "switch-demo",
+                        name: "SwitchDemo",
+                        component: () => import("@/views/list-component/switch-demo/index.vue"),
+                        meta: {
+                            title: "Switch演示",
+                        },
+                    },
+                    {
+                        path: "form-modal",
+                        name: "FormModalDemo",
+                        component: () => import("@/views/list-component/form-modal/index.vue"),
+                        meta: {
+                            title: "表单弹窗演示",
+                        },
+                    },
+                ],
             },
         ],
     },
