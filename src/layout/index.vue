@@ -1,80 +1,77 @@
 <template>
   <a-layout class="h-full">
-    <!-- 侧边栏 -->
-    <a-layout-sider
-      v-model:collapsed="collapsed"
-      :trigger="null"
-      collapsible
-      class="sider"
-    >
-      <div class="logo">
-        <h2 v-if="!collapsed" class="text-white text-center">文件管理系统</h2>
-        <h2 v-else class="text-white text-center">管理</h2>
+    <!-- 头部 - 固定不变 -->
+    <a-layout-header class="header bg-white px-4 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
+      <div class="flex items-center">
+        <menu-unfold-outlined
+          v-if="collapsed"
+          class="trigger mr-4"
+          @click="() => (collapsed = !collapsed)"
+        />
+        <menu-fold-outlined
+          v-else
+          class="trigger mr-4"
+          @click="() => (collapsed = !collapsed)"
+        />
+        <a-breadcrumb>
+          <a-breadcrumb-item>首页</a-breadcrumb-item>
+          <a-breadcrumb-item>{{ currentRouteTitle }}</a-breadcrumb-item>
+        </a-breadcrumb>
       </div>
-      <a-menu
-        v-model:selectedKeys="selectedKeys"
-        theme="dark"
-        mode="inline"
-        :items="menuItems"
-        @click="handleMenuClick"
-      />
-    </a-layout-sider>
+      <div class="flex items-center gap-4">
+        <a-dropdown>
+          <a class="ant-dropdown-link" @click.prevent>
+            <user-outlined class="mr-1" />
+            管理员
+            <down-outlined />
+          </a>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item>
+                <user-outlined />
+                个人中心
+              </a-menu-item>
+              <a-menu-item>
+                <setting-outlined />
+                设置
+              </a-menu-item>
+              <a-menu-divider />
+              <a-menu-item>
+                <logout-outlined />
+                退出登录
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+      </div>
+    </a-layout-header>
 
-    <!-- 主内容区域 -->
-    <a-layout>
-      <!-- 头部 -->
-      <a-layout-header
-        class="header bg-white px-4 flex items-center justify-between"
-        :style="{ marginLeft: `${contentMarginLeft}px` }"
+    <!-- 主体内容区域 -->
+    <a-layout class="mt-16">
+      <!-- 侧边栏 -->
+      <a-layout-sider
+        v-model:collapsed="collapsed"
+        :trigger="null"
+        collapsible
+        class="sider"
       >
-        <div class="flex items-center">
-          <menu-unfold-outlined
-            v-if="collapsed"
-            class="trigger mr-4"
-            @click="() => (collapsed = !collapsed)"
-          />
-          <menu-fold-outlined
-            v-else
-            class="trigger mr-4"
-            @click="() => (collapsed = !collapsed)"
-          />
-          <a-breadcrumb>
-            <a-breadcrumb-item>首页</a-breadcrumb-item>
-            <a-breadcrumb-item>{{ currentRouteTitle }}</a-breadcrumb-item>
-          </a-breadcrumb>
+        <div class="logo">
+          <h2 v-if="!collapsed" class="text-white text-center">文件管理系统</h2>
+          <h2 v-else class="text-white text-center">管理</h2>
         </div>
-        <div class="flex items-center gap-4">
-          <a-dropdown>
-            <a class="ant-dropdown-link" @click.prevent>
-              <user-outlined class="mr-1" />
-              管理员
-              <down-outlined />
-            </a>
-            <template #overlay>
-              <a-menu>
-                <a-menu-item>
-                  <user-outlined />
-                  个人中心
-                </a-menu-item>
-                <a-menu-item>
-                  <setting-outlined />
-                  设置
-                </a-menu-item>
-                <a-menu-divider />
-                <a-menu-item>
-                  <logout-outlined />
-                  退出登录
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
-        </div>
-      </a-layout-header>
+        <a-menu
+          v-model:selectedKeys="selectedKeys"
+          theme="dark"
+          mode="inline"
+          :items="menuItems"
+          @click="handleMenuClick"
+        />
+      </a-layout-sider>
 
       <!-- 内容区域 -->
       <a-layout-content
         class="content p-4 overflow-auto"
-        :style="{ marginLeft: `${contentMarginLeft}px` }"
+        :style="{ marginLeft: collapsed ? '80px' : '200px' }"
       >
         <router-view />
       </a-layout-content>
@@ -159,10 +156,6 @@ const currentRouteTitle = computed(() => {
   return currentRoute?.label || '未知页面'
 })
 
-const contentMarginLeft = computed(() => {
-  return collapsed.value ? 80 : 200
-})
-
 const handleMenuClick = ({ key }: { key: string }) => {
   router.push({ name: key })
 }
@@ -171,10 +164,10 @@ const handleMenuClick = ({ key }: { key: string }) => {
 <style scoped>
 .sider {
   overflow: auto;
-  height: 100vh;
+  height: calc(100vh - 64px);
   position: fixed;
   left: 0;
-  top: 0;
+  top: 64px;
   bottom: 0;
   z-index: 100;
 }
@@ -192,8 +185,8 @@ const handleMenuClick = ({ key }: { key: string }) => {
 .header {
   padding: 0;
   box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
-  z-index: 99;
-  transition: margin-left 0.2s;
+  height: 64px;
+  line-height: 64px;
 }
 
 .content {
