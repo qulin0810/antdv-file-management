@@ -47,14 +47,14 @@ const routes: RouteRecordRaw[] = [
             {
                 path: "file-component",
                 name: "FileComponent",
-                component: () => import("@/views/list-component/index.vue"),
                 meta: {
                     title: "组件list管理",
                     icon: "user",
                 },
+                redirect: "/file-component/overview",
                 children: [
                     {
-                        path: "",
+                        path: "overview",
                         name: "ComponentOverview",
                         component: () => import("@/views/list-component/index.vue"),
                         meta: {

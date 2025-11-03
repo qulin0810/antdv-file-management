@@ -122,7 +122,7 @@ const menuItems = computed(() => {
   if (!layoutRoute?.children) return []
 
   return layoutRoute.children
-    .filter(child => child.meta && child.meta.title && child.name !== 'ComponentOverview')
+    .filter(child => child.meta && child.meta.title)
     .map(child => {
       const iconName = child.meta?.icon as string
       const iconComponent = iconMap[iconName] || UserOutlined
@@ -148,8 +148,22 @@ const menuItems = computed(() => {
 })
 
 const currentRouteTitle = computed(() => {
-  const currentRoute = menuItems.value.find(item => item.key === route.name)
-  return currentRoute?.label || '未知页面'
+  // 查找当前路由对应的菜单项
+  const findMenuItem = (items: any[], targetName: string): any => {
+    for (const item of items) {
+      if (item.key === targetName) {
+        return item
+      }
+      if (item.children) {
+        const found = findMenuItem(item.children, targetName)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  
+  const currentMenuItem = findMenuItem(menuItems.value, route.name as string)
+  return currentMenuItem?.label || '未知页面'
 })
 
 const handleMenuClick = ({ key }: { key: string }) => {
