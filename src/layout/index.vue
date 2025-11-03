@@ -1,7 +1,7 @@
 <template>
   <a-layout class="h-full">
     <!-- 头部 - 固定不变 -->
-    <a-layout-header class="header bg-white px-4 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
+    <a-layout-header class="header px-4 flex items-center justify-between fixed top-0 left-0 right-0 z-50" style="background-color: #00857c;">
       <div class="flex items-center">
         <menu-unfold-outlined
           v-if="collapsed"
@@ -54,14 +54,15 @@
         :trigger="null"
         collapsible
         class="sider"
+        style="background-color: #ffffff;"
       >
-        <div class="logo">
+        <div class="logo" style="background-color: #00857c;">
           <h2 v-if="!collapsed" class="text-white text-center">文件管理系统</h2>
           <h2 v-else class="text-white text-center">管理</h2>
         </div>
         <a-menu
           v-model:selectedKeys="selectedKeys"
-          theme="dark"
+          theme="light"
           mode="inline"
           :items="menuItems"
           @click="handleMenuClick"
@@ -105,54 +106,49 @@ watch(() => route.name, (newName) => {
   }
 })
 
-const menuItems = [
-  {
-    key: 'Dashboard',
-    icon: () => h(DashboardOutlined),
-    label: '仪表板'
-  },
-  {
-    key: 'FileManagement',
-    icon: () => h(FolderOutlined),
-    label: '文件管理'
-  },
-  {
-    key: 'UserManagement',
-    icon: () => h(UserOutlined),
-    label: '用户管理'
-  },
-  {
-    key: 'TestManagement',
-    icon: () => h(UserOutlined),
-    label: '测试列表'
-  },
-  {
-    key: 'FileComponent',
-    icon: () => h(UserOutlined),
-    label: '组件列表',
-    children: [
-      {
-        key: 'ComponentOverview',
-        label: '组件概览'
-      },
-      {
-        key: 'BasicTableDemo',
-        label: '基础表格'
-      },
-      {
-        key: 'SwitchDemo',
-        label: 'Switch演示'
-      },
-      {
-        key: 'FormModalDemo',
-        label: '表单弹窗'
+// 图标映射
+const iconMap: Record<string, any> = {
+  dashboard: DashboardOutlined,
+  folder: FolderOutlined,
+  user: UserOutlined
+}
+
+// 从路由生成菜单项
+const menuItems = computed(() => {
+  const layoutRoute = router.getRoutes().find(route =>
+    route.path === '/' && route.children && route.children.length > 0
+  )
+  
+  if (!layoutRoute?.children) return []
+
+  return layoutRoute.children
+    .filter(child => child.meta && child.meta.title && child.name !== 'ComponentOverview')
+    .map(child => {
+      const iconName = child.meta?.icon as string
+      const iconComponent = iconMap[iconName] || UserOutlined
+      
+      const menuItem: any = {
+        key: child.name as string,
+        icon: () => h(iconComponent),
+        label: child.meta?.title as string
       }
-    ]
-  }
-]
+
+      // 处理子路由
+      if (child.children && child.children.length > 0) {
+        menuItem.children = child.children
+          .filter(subChild => subChild.meta?.title)
+          .map(subChild => ({
+            key: subChild.name as string,
+            label: subChild.meta?.title as string
+          }))
+      }
+
+      return menuItem
+    })
+})
 
 const currentRouteTitle = computed(() => {
-  const currentRoute = menuItems.find(item => item.key === route.name)
+  const currentRoute = menuItems.value.find(item => item.key === route.name)
   return currentRoute?.label || '未知页面'
 })
 
@@ -177,7 +173,6 @@ const handleMenuClick = ({ key }: { key: string }) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
   margin: 16px;
   border-radius: 6px;
 }
@@ -193,5 +188,21 @@ const handleMenuClick = ({ key }: { key: string }) => {
   background: #f0f2f5;
   min-height: calc(100vh - 64px);
   transition: margin-left 0.2s;
+}
+
+/* 左侧菜单悬停样式 */
+:deep(.ant-menu-light .ant-menu-item:hover) {
+  background-color: #6eceb2 !important;
+  color: #000000 !important;
+}
+
+:deep(.ant-menu-light .ant-menu-item-selected) {
+  background-color: #6eceb2 !important;
+  color: #000000 !important;
+}
+
+:deep(.ant-menu-light .ant-menu-submenu-title:hover) {
+  background-color: #6eceb2 !important;
+  color: #000000 !important;
 }
 </style>
