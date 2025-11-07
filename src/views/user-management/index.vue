@@ -22,9 +22,10 @@
 
     <!-- 用户编辑模态框组件 -->
     <UserFormModal
-      v-model:visible="editVisible"
+      :visible="editVisible"
       :is-edit="isEdit"
       :form-data="editForm"
+      @update:visible="editVisible = $event"
       @ok="handleEditOk"
       @cancel="handleEditCancel"
     />
@@ -32,42 +33,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import type { TableProps } from 'ant-design-vue'
+import { reactive, ref, onMounted } from 'vue'
 import UserSearch from './components/UserSearch.vue'
 import UserList from './components/UserList.vue'
 import UserFormModal from './components/UserFormModal.vue'
+import type { User, UserFormData, Pagination } from './types'
 
-interface UserItem {
-  key: string
-  username: string
-  email: string
-  role: string
-  status: 'active' | 'inactive'
-  createTime: string
-}
+defineOptions({
+  name: 'UserManagement'
+})
 
 const loading = ref(false)
 const editVisible = ref(false)
 const isEdit = ref(false)
-
-const editForm = reactive({
+const editForm = reactive<UserFormData>({
   username: '',
   email: '',
   role: 'user',
-  status: 'active' as 'active' | 'inactive'
+  status: 'active'
 })
-
-const pagination = reactive({
+const pagination = reactive<Pagination>({
   current: 1,
   pageSize: 10,
   total: 0,
   showSizeChanger: true,
   showQuickJumper: true,
-  showTotal: (total: number) => `共 ${total} 条记录`
+  showTotal: (total) => `共 ${total} 条记录`
 })
-
-const userList = ref<UserItem[]>([
+const userList = ref<User[]>([
   {
     key: '1',
     username: 'admin',
@@ -126,30 +119,30 @@ const handleAdd = () => {
   editVisible.value = true
 }
 
-const handleEdit = (record: UserItem) => {
+const handleEdit = (record: User) => {
   isEdit.value = true
   Object.assign(editForm, record)
   editVisible.value = true
 }
 
-const handleToggleStatus = (record: UserItem) => {
+const handleToggleStatus = (record: User) => {
   record.status = record.status === 'active' ? 'inactive' : 'active'
 }
 
-const handleDelete = (record: UserItem) => {
+const handleDelete = (record: User) => {
   const index = userList.value.findIndex(item => item.key === record.key)
   if (index > -1) {
     userList.value.splice(index, 1)
   }
 }
 
-const handleTableChange: TableProps['onChange'] = (pag, filters, sorter, extra) => {
+const handleTableChange = (pag: any, filters: any, sorter: any, extra: any) => {
   pagination.current = pag?.current || 1
   pagination.pageSize = pag?.pageSize || 10
   handleSearch()
 }
 
-const handleEditOk = (formData: any, isEditMode: boolean) => {
+const handleEditOk = (formData: UserFormData, isEditMode: boolean) => {
   if (isEditMode) {
     // 编辑逻辑
     const index = userList.value.findIndex(item => item.key === formData.key)
@@ -158,7 +151,7 @@ const handleEditOk = (formData: any, isEditMode: boolean) => {
     }
   } else {
     // 新增逻辑
-    const newUser: UserItem = {
+    const newUser: User = {
       key: Date.now().toString(),
       ...formData,
       createTime: new Date().toLocaleString()
@@ -171,8 +164,10 @@ const handleEditCancel = () => {
   // 可以在这里添加取消时的清理逻辑
 }
 
-// 初始化加载数据
-handleSearch()
+onMounted(() => {
+  // 初始化加载数据
+  handleSearch()
+})
 </script>
 
 <style scoped>

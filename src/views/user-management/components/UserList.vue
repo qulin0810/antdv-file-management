@@ -3,7 +3,7 @@
     <!-- 操作按钮 -->
     <div class="action-area mb-4">
       <a-space>
-        <a-button type="primary" @click="$emit('add')">
+        <a-button type="primary" @click="handleAdd">
           <template #icon><user-add-outlined /></template>
           新增用户
         </a-button>
@@ -38,20 +38,20 @@
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
-            <a-button type="link" size="small" @click="$emit('edit', record)">
+            <a-button type="link" size="small" @click="handleEdit(record)">
               编辑
             </a-button>
             <a-button 
               type="link" 
               size="small" 
               :danger="record.status === 'active'"
-              @click="$emit('toggle-status', record)"
+              @click="handleToggleStatus(record)"
             >
               {{ record.status === 'active' ? '禁用' : '启用' }}
             </a-button>
             <a-popconfirm
               title="确定要删除这个用户吗？"
-              @confirm="$emit('delete', record)"
+              @confirm="handleDelete(record)"
             >
               <a-button type="link" size="small" danger>删除</a-button>
             </a-popconfirm>
@@ -63,41 +63,26 @@
 </template>
 
 <script setup lang="ts">
-import type { TableProps } from 'ant-design-vue'
 import { UserAddOutlined, UserOutlined } from '@ant-design/icons-vue'
+import type { User, Pagination } from '../types'
 
-export interface UserItem {
-  key: string
-  username: string
-  email: string
-  role: string
-  status: 'active' | 'inactive'
-  createTime: string
-}
+defineOptions({
+  name: 'UserList'
+})
 
-interface Props {
-  userList: UserItem[]
+const props = defineProps<{
+  userList: User[]
   loading: boolean
-  pagination: {
-    current: number
-    pageSize: number
-    total: number
-    showSizeChanger: boolean
-    showQuickJumper: boolean
-    showTotal: (total: number) => string
-  }
-}
+  pagination: Pagination
+}>()
 
-interface Emits {
-  (e: 'add'): void
-  (e: 'edit', record: UserItem): void
-  (e: 'toggle-status', record: UserItem): void
-  (e: 'delete', record: UserItem): void
-  (e: 'table-change', pag: any, filters: any, sorter: any, extra: any): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const emit = defineEmits<{
+  add: []
+  edit: [record: User]
+  'toggle-status': [record: User]
+  delete: [record: User]
+  'table-change': [pag: any, filters: any, sorter: any, extra: any]
+}>()
 
 const columns = [
   {
@@ -146,7 +131,23 @@ const getRoleColor = (role: string) => {
   return colors[role] || 'default'
 }
 
-const handleTableChange: TableProps['onChange'] = (pag, filters, sorter, extra) => {
+const handleAdd = () => {
+  emit('add')
+}
+
+const handleEdit = (record: User) => {
+  emit('edit', record)
+}
+
+const handleToggleStatus = (record: User) => {
+  emit('toggle-status', record)
+}
+
+const handleDelete = (record: User) => {
+  emit('delete', record)
+}
+
+const handleTableChange = (pag: any, filters: any, sorter: any, extra: any) => {
   emit('table-change', pag, filters, sorter, extra)
 }
 </script>
@@ -156,9 +157,3 @@ const handleTableChange: TableProps['onChange'] = (pag, filters, sorter, extra) 
   width: 100%;
 }
 </style>
-
-<script lang="ts">
-export default {
-  name: 'UserList'
-}
-</script>

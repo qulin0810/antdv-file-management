@@ -4,7 +4,7 @@
       ref="searchFormRef"
       :model="searchForm"
       layout="inline"
-      @finish="$emit('search', searchForm)"
+      @finish="handleSearch"
     >
       <a-form-item label="用户名" name="username">
         <a-input
@@ -37,37 +37,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import type { FormInstance } from 'ant-design-vue'
+import { reactive, ref } from 'vue'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 
-export interface SearchForm {
-  username: string
-  email: string
-}
+defineOptions({
+  name: 'UserSearch'
+})
 
-interface Emits {
-  (e: 'search', form: SearchForm): void
-  (e: 'reset'): void
-}
+const emit = defineEmits<{
+  search: [form: { username: string; email: string }]
+  reset: []
+}>()
 
-const emit = defineEmits<Emits>()
-
-const searchFormRef = ref<FormInstance>()
-const searchForm = reactive<SearchForm>({
+const searchFormRef = ref()
+const searchForm = reactive({
   username: '',
   email: ''
 })
 
-const handleReset = () => {
-  searchFormRef.value?.resetFields()
-  emit('reset')
+const handleSearch = () => {
+  emit('search', { ...searchForm })
 }
-</script>
 
-<script lang="ts">
-export default {
-  name: 'UserSearch'
+const handleReset = () => {
+  if (searchFormRef.value) {
+    searchFormRef.value.resetFields()
+  }
+  emit('reset')
 }
 </script>
 
