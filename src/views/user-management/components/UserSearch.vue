@@ -67,6 +67,12 @@ const handleReset = () => {
 }
 </script>
 
+<script lang="ts">
+export default {
+  name: 'UserSearch'
+}
+</script>
+
 <style scoped>
 .search-area {
   width: 100%;

@@ -152,6 +152,12 @@ const handleTableChange = (pag: any, filters: any, sorter: any, extra: any) => {
 }
 </script>
 
+<script lang="ts">
+export default {
+  name: 'UserList'
+}
+</script>
+
 <style scoped>
 .action-area {
   width: 100%;

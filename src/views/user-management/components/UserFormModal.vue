@@ -37,26 +37,20 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
 import type { UserFormData } from '../types'
+import { createEmptyUserFormData } from '../types'
 
 defineOptions({
   name: 'UserFormModal'
 })
 
-interface Props {
+const props = withDefaults(defineProps<{
   visible: boolean
   isEdit: boolean
   formData: UserFormData
-}
-
-const props = withDefaults(defineProps<Props>(), {
+}>(), {
   visible: false,
   isEdit: false,
-  formData: () => ({
-    username: '',
-    email: '',
-    role: 'user',
-    status: 'active'
-  })
+  formData: () => createEmptyUserFormData()
 })
 
 const emit = defineEmits<{
@@ -66,12 +60,7 @@ const emit = defineEmits<{
 }>()
 
 const formRef = ref()
-const localFormData = reactive<UserFormData>({
-  username: '',
-  email: '',
-  role: 'user',
-  status: 'active'
-})
+const localFormData = reactive<UserFormData>(createEmptyUserFormData())
 
 const rules = {
   username: [
@@ -83,15 +72,26 @@ const rules = {
   ],
   role: [
     { required: true, message: '请选择角色', trigger: 'change' }
+  ],
+  status: [
+    { required: true, message: '请选择状态', trigger: 'change' }
   ]
 }
 
 watch(
-  () => props.formData,
+  () => props.visible,
   (newVal) => {
-    Object.assign(localFormData, newVal)
+    if (newVal) {
+      // 当模态框打开时，根据是否是编辑模式来设置表单数据
+      if (props.isEdit) {
+        Object.assign(localFormData, props.formData)
+      } else {
+        // 新增模式时重置表单数据
+        resetLocalFormData()
+      }
+    }
   },
-  { deep: true, immediate: true }
+  { immediate: true }
 )
 
 const handleOk = async () => {
@@ -107,6 +107,33 @@ const handleOk = async () => {
 const handleCancel = () => {
   emit('update:visible', false)
   emit('cancel')
-  formRef.value.resetFields()
+  // 使用表单组件的内置重置方法
+  resetForm()
+}
+
+const resetLocalFormData = () => {
+  // 方法1: 使用 Object.assign 和工厂函数
+  Object.assign(localFormData, createEmptyUserFormData())
+  
+  // 方法2: 也可以使用解构赋值
+  // const emptyForm = createEmptyUserFormData()
+  // Object.keys(emptyForm).forEach(key => {
+  //   localFormData[key as keyof UserFormData] = emptyForm[key as keyof UserFormData]
+  // })
+}
+
+const resetForm = () => {
+  // 使用表单组件的内置重置方法
+  if (formRef.value) {
+    formRef.value.resetFields()
+  }
+  // 同时重置本地数据以确保一致性
+  resetLocalFormData()
+}
+</script>
+
+<script lang="ts">
+export default {
+  name: 'UserFormModal'
 }
 </script>

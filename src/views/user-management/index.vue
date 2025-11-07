@@ -38,6 +38,7 @@ import UserSearch from './components/UserSearch.vue'
 import UserList from './components/UserList.vue'
 import UserFormModal from './components/UserFormModal.vue'
 import type { User, UserFormData, Pagination } from './types'
+import { createEmptyUserFormData } from './types'
 
 defineOptions({
   name: 'UserManagement'
@@ -46,12 +47,7 @@ defineOptions({
 const loading = ref(false)
 const editVisible = ref(false)
 const isEdit = ref(false)
-const editForm = reactive<UserFormData>({
-  username: '',
-  email: '',
-  role: 'user',
-  status: 'active'
-})
+const editForm = reactive<UserFormData>(createEmptyUserFormData())
 const pagination = reactive<Pagination>({
   current: 1,
   pageSize: 10,
@@ -110,13 +106,20 @@ const handleReset = () => {
 
 const handleAdd = () => {
   isEdit.value = false
-  Object.assign(editForm, {
-    username: '',
-    email: '',
-    role: 'user',
-    status: 'active'
-  })
+  // 使用更优雅的方式重置表单数据
+  resetEditForm()
   editVisible.value = true
+}
+
+const resetEditForm = () => {
+  // 方法1: 使用 Object.assign 和工厂函数
+  Object.assign(editForm, createEmptyUserFormData())
+  
+  // 方法2: 也可以使用解构赋值
+  // const emptyForm = createEmptyUserFormData()
+  // Object.keys(emptyForm).forEach(key => {
+  //   editForm[key as keyof UserFormData] = emptyForm[key as keyof UserFormData]
+  // })
 }
 
 const handleEdit = (record: User) => {
@@ -136,27 +139,92 @@ const handleDelete = (record: User) => {
   }
 }
 
-const handleTableChange = (pag: any, filters: any, sorter: any, extra: any) => {
+const handleTableChange = (pag: { current?: number; pageSize?: number }, filters: any, sorter: any, extra: any) => {
   pagination.current = pag?.current || 1
   pagination.pageSize = pag?.pageSize || 10
   handleSearch()
 }
 
-const handleEditOk = (formData: UserFormData, isEditMode: boolean) => {
-  if (isEditMode) {
-    // 编辑逻辑
-    const index = userList.value.findIndex(item => item.key === formData.key)
-    if (index > -1) {
-      Object.assign(userList.value[index], formData)
+const handleEditOk = async (formData: UserFormData, isEditMode: boolean) => {
+  // 表单验证
+  if (!formData.username.trim()) {
+    console.error('用户名不能为空')
+    return
+  }
+  if (!formData.email.trim()) {
+    console.error('邮箱不能为空')
+    return
+  }
+  if (!formData.role) {
+    console.error('请选择角色')
+    return
+  }
+
+  loading.value = true
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
+
+    if (isEditMode) {
+      // 调用编辑API
+      const response = await fetch(`/api/users/${formData.key}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+        signal: controller.signal
+      })
+      
+      if (!response.ok) {
+        throw new Error(`更新用户失败: ${response.status} ${response.statusText}`)
+      }
+      
+      const updatedUser = await response.json()
+      
+      // 更新本地数据
+      const index = userList.value.findIndex(item => item.key === formData.key)
+      if (index > -1) {
+        Object.assign(userList.value[index], updatedUser)
+      }
+    } else {
+      // 调用新增API
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+        signal: controller.signal
+      })
+      
+      if (!response.ok) {
+        throw new Error(`创建用户失败: ${response.status} ${response.statusText}`)
+      }
+      
+      const newUser = await response.json()
+      
+      // 添加到本地数据
+      userList.value.unshift(newUser)
     }
-  } else {
-    // 新增逻辑
-    const newUser: User = {
-      key: Date.now().toString(),
-      ...formData,
-      createTime: new Date().toLocaleString()
+    
+    clearTimeout(timeoutId)
+    // 关闭模态框
+    editVisible.value = false
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        console.error('请求超时，请重试')
+      } else {
+        console.error('操作失败:', error.message)
+      }
+    } else {
+      console.error('操作失败:', error)
     }
-    userList.value.unshift(newUser)
+    // 这里可以添加错误提示，比如使用 message 组件
+    // message.error('操作失败，请重试')
+  } finally {
+    loading.value = false
   }
 }
 

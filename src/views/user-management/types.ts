@@ -23,3 +23,10 @@ export interface UserFormData {
   status: string
   key?: string
 }
+
+export const createEmptyUserFormData = (): UserFormData => ({
+  username: '',
+  email: '',
+  role: '',
+  status: ''
+})
