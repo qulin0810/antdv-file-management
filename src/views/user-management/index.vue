@@ -3,6 +3,7 @@
     <a-card>
       <!-- 搜索组件 -->
       <UserSearch
+        :job-options="jobOptions"
         @search="handleSearch"
         @reset="handleReset"
       />
@@ -25,6 +26,7 @@
       :visible="editVisible"
       :is-edit="isEdit"
       :form-data="editForm"
+      :job-options="jobOptions"
       @update:visible="editVisible = $event"
       @ok="handleEditOk"
       @cancel="handleEditCancel"
@@ -56,47 +58,192 @@ const pagination = reactive<Pagination>({
   showQuickJumper: true,
   showTotal: (total) => `共 ${total} 条记录`
 })
+// 职业选项
+const jobOptions = [
+  { label: '老师', value: 1 },
+  { label: 'IT', value: 2 },
+  { label: '医生', value: 3 },
+  { label: '工程师', value: 4 },
+  { label: '设计师', value: 5 }
+]
+
 const userList = ref<User[]>([
   {
     key: '1',
     username: 'admin',
     email: 'admin@example.com',
     role: 'admin',
+    job: 2, // IT
     status: 'active',
-    createTime: '2024-01-15 10:30'
+    createTime: '2024-01-15 10:30',
+    department: '技术部',
+    position: '系统管理员',
+    phone: '13800138001',
+    address: '北京市朝阳区建国门外大街1号',
+    remark: '系统管理员，负责系统维护'
   },
   {
     key: '2',
     username: 'user1',
     email: 'user1@example.com',
     role: 'user',
+    job: 1, // 老师
     status: 'active',
-    createTime: '2024-01-16 14:20'
+    createTime: '2024-01-16 14:20',
+    department: '教学部',
+    position: '高级讲师',
+    phone: '13800138002',
+    address: '上海市浦东新区陆家嘴金融中心',
+    remark: '负责前端开发课程教学'
   },
   {
     key: '3',
     username: 'user2',
     email: 'user2@example.com',
     role: 'user',
+    job: 3, // 医生
     status: 'inactive',
-    createTime: '2024-01-17 09:15'
+    createTime: '2024-01-17 09:15',
+    department: '医疗部',
+    position: '主治医师',
+    phone: '13800138003',
+    address: '广州市天河区珠江新城',
+    remark: '内科主治医师，擅长心血管疾病'
   },
   {
     key: '4',
     username: 'guest1',
     email: 'guest1@example.com',
     role: 'guest',
+    job: 4, // 工程师
     status: 'active',
-    createTime: '2024-01-18 16:45'
+    createTime: '2024-01-18 16:45',
+    department: '研发部',
+    position: '高级工程师',
+    phone: '13800138004',
+    address: '深圳市南山区科技园',
+    remark: '负责后端系统架构设计'
+  },
+  {
+    key: '5',
+    username: 'guest2',
+    email: 'guest2@example.com',
+    role: 'guest',
+    job: 5, // 设计师
+    status: 'active',
+    createTime: '2024-01-19 11:30',
+    department: '设计部',
+    position: 'UI设计师',
+    phone: '13800138005',
+    address: '杭州市西湖区文三路',
+    remark: '负责产品界面设计和用户体验优化'
+  },
+  {
+    key: '6',
+    username: 'manager1',
+    email: 'manager1@example.com',
+    role: 'admin',
+    job: 2, // IT
+    status: 'active',
+    createTime: '2024-01-20 08:45',
+    department: '管理部',
+    position: '项目经理',
+    phone: '13800138006',
+    address: '成都市武侯区天府软件园',
+    remark: '负责项目管理与团队协调'
+  },
+  {
+    key: '7',
+    username: 'teacher1',
+    email: 'teacher1@example.com',
+    role: 'user',
+    job: 1, // 老师
+    status: 'active',
+    createTime: '2024-01-21 13:20',
+    department: '教学部',
+    position: '课程顾问',
+    phone: '13800138007',
+    address: '南京市鼓楼区新街口',
+    remark: '负责课程咨询和学员服务'
+  },
+  {
+    key: '8',
+    username: 'doctor1',
+    email: 'doctor1@example.com',
+    role: 'user',
+    job: 3, // 医生
+    status: 'active',
+    createTime: '2024-01-22 10:15',
+    department: '医疗部',
+    position: '副主任医师',
+    phone: '13800138008',
+    address: '武汉市武昌区光谷',
+    remark: '外科副主任医师，擅长微创手术'
+  },
+  {
+    key: '9',
+    username: 'engineer1',
+    email: 'engineer1@example.com',
+    role: 'user',
+    job: 4, // 工程师
+    status: 'inactive',
+    createTime: '2024-01-23 15:30',
+    department: '研发部',
+    position: '测试工程师',
+    phone: '13800138009',
+    address: '西安市雁塔区高新区',
+    remark: '负责软件测试和质量保证'
+  },
+  {
+    key: '10',
+    username: 'designer1',
+    email: 'designer1@example.com',
+    role: 'user',
+    job: 5, // 设计师
+    status: 'active',
+    createTime: '2024-01-24 11:45',
+    department: '设计部',
+    position: '交互设计师',
+    phone: '13800138010',
+    address: '重庆市渝北区光电园',
+    remark: '负责产品交互设计和原型制作'
   }
 ])
 
-const handleSearch = () => {
+const handleSearch = (searchParams?: { username: string; email: string; job?: number }) => {
   loading.value = true
   // 模拟搜索延迟
   setTimeout(() => {
+    if (searchParams) {
+      // 如果有搜索参数，进行过滤
+      const filteredList = userList.value.filter(user => {
+        let match = true
+        
+        // 用户名搜索（模糊匹配）
+        if (searchParams.username && !user.username.includes(searchParams.username)) {
+          match = false
+        }
+        
+        // 邮箱搜索（模糊匹配）
+        if (searchParams.email && !user.email.includes(searchParams.email)) {
+          match = false
+        }
+        
+        // 职业搜索（精确匹配）
+        if (searchParams.job && user.job !== searchParams.job) {
+          match = false
+        }
+        
+        return match
+      })
+      
+      pagination.total = filteredList.length
+    } else {
+      // 没有搜索参数，显示所有数据
+      pagination.total = userList.value.length
+    }
+    
     loading.value = false
-    pagination.total = userList.value.length
   }, 500)
 }
 

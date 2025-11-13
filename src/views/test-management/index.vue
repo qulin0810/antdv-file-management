@@ -24,6 +24,15 @@
             style="width: 200px"
           />
         </a-form-item>
+        <a-form-item label="职业">
+          <a-select
+            v-model:value="searchForm.job"
+            placeholder="请选择职业"
+            allow-clear
+            style="width: 200px"
+            :options="jobOptions"
+          />
+        </a-form-item>
         <a-form-item>
           <a-button type="primary" @click="handleSearch">搜索</a-button>
           <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
@@ -40,6 +49,10 @@
       row-key="id"
     >
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'job'">
+          <span>{{ getJobLabel(record.job) }}</span>
+        </template>
+        
         <template v-if="column.key === 'status'">
           <a-tag :color="record.status === 1 ? 'green' : 'red'">
             {{ record.status === 1 ? '已启用' : '已禁用' }}
@@ -89,8 +102,18 @@ const dataSource = ref([]);
 // 搜索表单
 const searchForm = reactive({
   name: '',
-  age: ''
+  age: '',
+  job: ''
 });
+
+// 职业选项
+const jobOptions = [
+  { label: '老师', value: 1 },
+  { label: 'IT', value: 2 },
+  { label: '医生', value: 3 },
+  { label: '工程师', value: 4 },
+  { label: '设计师', value: 5 }
+];
 
 // 分页配置
 const pagination = reactive({
@@ -118,6 +141,11 @@ const columns = [
     key: 'age',
   },
   {
+    title: '职业',
+    dataIndex: 'job',
+    key: 'job',
+  },
+  {
     title: '地址',
     dataIndex: 'address',
     key: 'address',
@@ -134,11 +162,18 @@ const columns = [
   },
 ];
 
+// 获取职业标签
+const getJobLabel = (jobValue) => {
+  const job = jobOptions.find(option => option.value === jobValue);
+  return job ? job.label : '未知';
+};
+
 // 模拟数据 - 更真实的数据
 const mockData = Array.from({ length: 156 }, (_, index) => ({
   id: index + 1,
   name: `用户${index + 1}`,
   age: Math.floor(Math.random() * 50) + 18,
+  job: Math.floor(Math.random() * 5) + 1, // 随机分配职业值 1-5
   address: `北京市朝阳区第${index + 1}街道`,
   status: Math.random() > 0.3 ? 1 : 0,
   email: `user${index + 1}@example.com`,
@@ -163,6 +198,11 @@ const fetchData = async () => {
       
       // 年龄搜索（精确匹配）
       if (searchForm.age && item.age.toString() !== searchForm.age) {
+        match = false;
+      }
+      
+      // 职业搜索（精确匹配）
+      if (searchForm.job && item.job.toString() !== searchForm.job) {
         match = false;
       }
       
@@ -198,6 +238,7 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.name = '';
   searchForm.age = '';
+  searchForm.job = '';
   pagination.current = 1;
   fetchData();
 };
@@ -258,6 +299,7 @@ const handleAdd = () => {
     id: mockData.length + 1,
     name: `新用户${mockData.length + 1}`,
     age: Math.floor(Math.random() * 30) + 20,
+    job: Math.floor(Math.random() * 5) + 1, // 随机分配职业值 1-5
     address: '北京市海淀区',
     status: 1,
     email: `newuser${mockData.length + 1}@example.com`,

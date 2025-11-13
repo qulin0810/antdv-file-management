@@ -135,6 +135,35 @@
               <a-card
                 class="component-card"
                 hoverable
+                @click="$router.push({ name: 'RichTextEditorDemo' })"
+              >
+                <template #cover>
+                  <div class="card-cover editor-bg">
+                    <edit-outlined class="card-icon" />
+                  </div>
+                </template>
+                <a-card-meta title="富文本编辑器">
+                  <template #description>
+                    <div class="card-description">
+                      <p>功能强大的富文本编辑器，支持图片编辑和格式化</p>
+                      <ul>
+                        <li>文本格式化</li>
+                        <li>图片上传和编辑</li>
+                        <li>链接插入</li>
+                        <li>内容预览</li>
+                      </ul>
+                    </div>
+                  </template>
+                </a-card-meta>
+                <template #actions>
+                  <setting-outlined key="setting" @click="showComponentInfo('RichTextEditor')" />
+                  <eye-outlined key="view" @click="$router.push({ name: 'RichTextEditorDemo' })" />
+                </template>
+              </a-card>
+
+              <a-card
+                class="component-card"
+                hoverable
                 @click="showComingSoon"
               >
                 <template #cover>
@@ -208,6 +237,10 @@
             <template #icon><form-outlined /></template>
             表单弹窗
           </a-button>
+          <a-button type="primary" @click="$router.push({ name: 'RichTextEditorDemo' })">
+            <template #icon><edit-outlined /></template>
+            富文本编辑器
+          </a-button>
           <a-button type="dashed" @click="showAllComponents">
             <template #icon><appstore-outlined /></template>
             查看所有组件
@@ -219,10 +252,10 @@
       <div class="stats-section">
         <a-row :gutter="16">
           <a-col :span="6">
-            <a-statistic title="可用组件" :value="8" />
+            <a-statistic title="可用组件" :value="9" />
           </a-col>
           <a-col :span="6">
-            <a-statistic title="已完成" :value="3" />
+            <a-statistic title="已完成" :value="4" />
           </a-col>
           <a-col :span="6">
             <a-statistic title="开发中" :value="5" />
@@ -248,7 +281,8 @@ import {
   SearchOutlined,
   UploadOutlined,
   PieChartOutlined,
-  AppstoreOutlined
+  AppstoreOutlined,
+  EditOutlined
 } from '@ant-design/icons-vue';
 
 const handleCategoryChange = (key: string) => {
@@ -341,6 +375,10 @@ const showAllComponents = () => {
 
 .coming-soon-bg {
   background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.editor-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .other-bg {

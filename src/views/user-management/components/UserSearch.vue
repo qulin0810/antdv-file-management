@@ -20,6 +20,15 @@
           allow-clear
         />
       </a-form-item>
+      <a-form-item label="职业" name="job">
+        <a-select
+          v-model:value="searchForm.job"
+          placeholder="请选择职业"
+          allow-clear
+          style="width: 200px"
+          :options="jobOptions"
+        />
+      </a-form-item>
       <a-form-item>
         <a-space>
           <a-button type="primary" html-type="submit">
@@ -44,15 +53,22 @@ defineOptions({
   name: 'UserSearch'
 })
 
+const props = withDefaults(defineProps<{
+  jobOptions?: Array<{ label: string; value: number }>
+}>(), {
+  jobOptions: () => []
+})
+
 const emit = defineEmits<{
-  search: [form: { username: string; email: string }]
+  search: [form: { username: string; email: string; job?: number }]
   reset: []
 }>()
 
 const searchFormRef = ref()
 const searchForm = reactive({
   username: '',
-  email: ''
+  email: '',
+  job: undefined as number | undefined
 })
 
 const handleSearch = () => {

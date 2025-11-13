@@ -24,6 +24,9 @@
           <a-select-option value="guest">访客</a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item label="职业" name="job">
+        <a-select v-model:value="localFormData.job" placeholder="请选择职业" :options="props.jobOptions" />
+      </a-form-item>
       <a-form-item label="状态" name="status">
         <a-radio-group v-model:value="localFormData.status">
           <a-radio value="active">启用</a-radio>
@@ -47,10 +50,12 @@ const props = withDefaults(defineProps<{
   visible: boolean
   isEdit: boolean
   formData: UserFormData
+  jobOptions?: Array<{ label: string; value: number }>
 }>(), {
   visible: false,
   isEdit: false,
-  formData: () => createEmptyUserFormData()
+  formData: () => createEmptyUserFormData(),
+  jobOptions: () => []
 })
 
 const emit = defineEmits<{
@@ -72,6 +77,9 @@ const rules = {
   ],
   role: [
     { required: true, message: '请选择角色', trigger: 'change' }
+  ],
+  job: [
+    { required: true, message: '请选择职业', trigger: 'change' }
   ],
   status: [
     { required: true, message: '请选择状态', trigger: 'change' }

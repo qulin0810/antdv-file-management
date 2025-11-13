@@ -4,7 +4,13 @@ export interface User {
   email: string
   role: string
   status: string
+  job?: number
   createTime: string
+  department?: string
+  position?: string
+  phone?: string
+  address?: string
+  remark?: string
 }
 
 export interface Pagination {
@@ -21,6 +27,7 @@ export interface UserFormData {
   email: string
   role: string
   status: string
+  job?: number
   key?: string
 }
 
@@ -28,5 +35,6 @@ export const createEmptyUserFormData = (): UserFormData => ({
   username: '',
   email: '',
   role: '',
-  status: ''
+  status: '',
+  job: undefined
 })

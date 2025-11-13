@@ -85,6 +85,14 @@ const routes: RouteRecordRaw[] = [
                             title: "表单弹窗演示",
                         },
                     },
+                    {
+                        path: "rich-text-editor",
+                        name: "RichTextEditorDemo",
+                        component: () => import("@/views/list-component/rich-text-editor/index.vue"),
+                        meta: {
+                            title: "富文本编辑器演示",
+                        },
+                    },
                 ],
             },
         ],

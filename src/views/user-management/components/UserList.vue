@@ -16,6 +16,7 @@
       :data-source="userList"
       :pagination="pagination"
       :loading="loading"
+      :scroll="{ x: 1800 }"
       @change="handleTableChange"
     >
       <template #headerCell="{ column }">
@@ -36,14 +37,32 @@
             {{ record.role }}
           </a-tag>
         </template>
+        <template v-else-if="column.key === 'job'">
+          <span>{{ getJobLabel(record.job) }}</span>
+        </template>
+        <template v-else-if="column.key === 'department'">
+          <span>{{ record.department || '-' }}</span>
+        </template>
+        <template v-else-if="column.key === 'position'">
+          <span>{{ record.position || '-' }}</span>
+        </template>
+        <template v-else-if="column.key === 'phone'">
+          <span>{{ record.phone || '-' }}</span>
+        </template>
+        <template v-else-if="column.key === 'address'">
+          <span>{{ record.address || '-' }}</span>
+        </template>
+        <template v-else-if="column.key === 'remark'">
+          <span>{{ record.remark || '-' }}</span>
+        </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button type="link" size="small" @click="handleEdit(record)">
               编辑
             </a-button>
-            <a-button 
-              type="link" 
-              size="small" 
+            <a-button
+              type="link"
+              size="small"
               :danger="record.status === 'active'"
               @click="handleToggleStatus(record)"
             >
@@ -89,37 +108,84 @@ const columns = [
     title: '用户名',
     dataIndex: 'username',
     key: 'username',
-    width: '20%'
+    width: 150,
+    fixed: 'left'
   },
   {
     title: '邮箱',
     dataIndex: 'email',
     key: 'email',
-    width: '25%'
+    width: 200
   },
   {
     title: '角色',
     dataIndex: 'role',
     key: 'role',
-    width: '15%'
+    width: 120
+  },
+  {
+    title: '职业',
+    dataIndex: 'job',
+    key: 'job',
+    width: 120
   },
   {
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    width: '15%'
+    width: 100
   },
   {
     title: '创建时间',
     dataIndex: 'createTime',
     key: 'createTime',
-    width: '15%'
+    width: 180
+  },
+  {
+    title: '部门',
+    dataIndex: 'department',
+    key: 'department',
+    width: 150
+  },
+  {
+    title: '职位',
+    dataIndex: 'position',
+    key: 'position',
+    width: 150
+  },
+  {
+    title: '手机号',
+    dataIndex: 'phone',
+    key: 'phone',
+    width: 150
+  },
+  {
+    title: '地址',
+    dataIndex: 'address',
+    key: 'address',
+    width: 200
+  },
+  {
+    title: '备注',
+    dataIndex: 'remark',
+    key: 'remark',
+    width: 200
   },
   {
     title: '操作',
     key: 'action',
-    width: '10%'
+    width: 200,
+    fixed: 'right'
   }
+]
+
+// 职业选项
+const jobOptions = [
+  { label: '老师', value: 1 },
+  { label: 'IT', value: 2 },
+  { label: '医生', value: 3 },
+  { label: '工程师', value: 4 },
+  { label: '设计师', value: 5 }
 ]
 
 const getRoleColor = (role: string) => {
@@ -129,6 +195,13 @@ const getRoleColor = (role: string) => {
     guest: 'orange'
   }
   return colors[role] || 'default'
+}
+
+// 获取职业标签
+const getJobLabel = (jobValue?: number) => {
+  if (!jobValue) return '未知'
+  const job = jobOptions.find(option => option.value === jobValue)
+  return job ? job.label : '未知'
 }
 
 const handleAdd = () => {
