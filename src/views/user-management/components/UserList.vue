@@ -16,7 +16,7 @@
       :data-source="userList"
       :pagination="pagination"
       :loading="loading"
-      :scroll="{ x: 1800 }"
+      :scroll="{ x: tableScrollX }"
       @change="handleTableChange"
     >
       <template #headerCell="{ column }">
@@ -84,6 +84,7 @@
 <script setup lang="ts">
 import { UserAddOutlined, UserOutlined } from '@ant-design/icons-vue'
 import type { User, Pagination } from '../types'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 defineOptions({
   name: 'UserList'
@@ -102,6 +103,37 @@ const emit = defineEmits<{
   delete: [record: User]
   'table-change': [pag: any, filters: any, sorter: any, extra: any]
 }>()
+
+// 响应式表格宽度计算
+const tableScrollX = ref(1800)
+
+// 计算表格可用宽度
+const calculateTableWidth = () => {
+  const windowWidth = window.innerWidth
+  const sidebarWidth = 200 // 左侧树形展开时的宽度
+  const padding = 32 // 内容区域的内边距
+  const margin = 16 // 表格容器的边距
+  
+  // 计算可用宽度 = 窗口宽度 - 侧边栏宽度 - 内边距 - 边距
+  const availableWidth = windowWidth - sidebarWidth - padding - margin
+  
+  // 设置表格滚动宽度，最小为1200px
+  tableScrollX.value = Math.max(availableWidth, 1200)
+}
+
+// 监听窗口大小变化
+const handleResize = () => {
+  calculateTableWidth()
+}
+
+onMounted(() => {
+  calculateTableWidth()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 
 const columns = [
   {
