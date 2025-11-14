@@ -13,7 +13,7 @@
     <!-- 用户列表 -->
     <a-table
       :columns="columns"
-      :data-source="userList"
+      :data-source="userData"
       :pagination="pagination"
       :loading="loading"
       :scroll="{ x: tableScrollX }"
@@ -27,34 +27,18 @@
       </template>
 
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'status'">
-          <a-tag :color="record.status === 'active' ? 'green' : 'red'">
-            {{ record.status === 'active' ? '启用' : '禁用' }}
-          </a-tag>
-        </template>
-        <template v-else-if="column.key === 'role'">
+        <template v-if="column.key === 'role'">
           <a-tag :color="getRoleColor(record.role)">
             {{ record.role }}
           </a-tag>
         </template>
-        <template v-else-if="column.key === 'job'">
-          <span>{{ getJobLabel(record.job) }}</span>
+        
+        <template v-else-if="column.key === 'status'">
+          <a-tag :color="record.status === 'active' ? 'green' : 'red'">
+            {{ record.status === 'active' ? '启用' : '禁用' }}
+          </a-tag>
         </template>
-        <template v-else-if="column.key === 'department'">
-          <span>{{ record.department || '-' }}</span>
-        </template>
-        <template v-else-if="column.key === 'position'">
-          <span>{{ record.position || '-' }}</span>
-        </template>
-        <template v-else-if="column.key === 'phone'">
-          <span>{{ record.phone || '-' }}</span>
-        </template>
-        <template v-else-if="column.key === 'address'">
-          <span>{{ record.address || '-' }}</span>
-        </template>
-        <template v-else-if="column.key === 'remark'">
-          <span>{{ record.remark || '-' }}</span>
-        </template>
+        
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button type="link" size="small" @click="handleEdit(record)">
@@ -72,7 +56,9 @@
               title="确定要删除这个用户吗？"
               @confirm="handleDelete(record)"
             >
-              <a-button type="link" size="small" danger>删除</a-button>
+              <a-button type="link" size="small" danger>
+                删除
+              </a-button>
             </a-popconfirm>
           </a-space>
         </template>
@@ -84,14 +70,13 @@
 <script setup lang="ts">
 import { UserAddOutlined, UserOutlined } from '@ant-design/icons-vue'
 import type { User, Pagination } from '../types'
-import { useDynamicTableScrollWidth } from '../../../utils/table'
 
 defineOptions({
   name: 'UserList'
 })
 
 const props = defineProps<{
-  userList: User[]
+  userData: User[]
   loading: boolean
   pagination: Pagination
 }>()
@@ -104,14 +89,13 @@ const emit = defineEmits<{
   'table-change': [pag: any, filters: any, sorter: any, extra: any]
 }>()
 
-// 列配置
+// 列配置 - 完整版本，包含操作列
 const columns = [
   {
     title: '用户名',
     dataIndex: 'username',
     key: 'username',
-    width: 150,
-    fixed: 'left'
+    width: 120
   },
   {
     title: '邮箱',
@@ -123,55 +107,28 @@ const columns = [
     title: '角色',
     dataIndex: 'role',
     key: 'role',
-    width: 120
-  },
-  {
-    title: '职业',
-    dataIndex: 'job',
-    key: 'job',
-    width: 120
+    width: 100
   },
   {
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    width: 100
+    width: 80
+  },
+  {
+    title: '职业',
+    dataIndex: 'job',
+    key: 'job',
+    width: 100,
+    customRender: ({ text }: { text: number }) => {
+      return getJobLabel(text)
+    }
   },
   {
     title: '创建时间',
     dataIndex: 'createTime',
     key: 'createTime',
-    width: 180
-  },
-  {
-    title: '部门',
-    dataIndex: 'department',
-    key: 'department',
     width: 150
-  },
-  {
-    title: '职位',
-    dataIndex: 'position',
-    key: 'position',
-    width: 150
-  },
-  {
-    title: '手机号',
-    dataIndex: 'phone',
-    key: 'phone',
-    width: 150
-  },
-  {
-    title: '地址',
-    dataIndex: 'address',
-    key: 'address',
-    width: 200
-  },
-  {
-    title: '备注',
-    dataIndex: 'remark',
-    key: 'remark',
-    width: 200
   },
   {
     title: '操作',
@@ -181,8 +138,29 @@ const columns = [
   }
 ]
 
-// 响应式表格宽度计算
-const { tableScrollX } = useDynamicTableScrollWidth(columns)
+// 智能表格宽度计算
+// 当列数较少时，使用精确列宽总和
+// 当列数较多时，使用响应式宽度计算
+const getTableScrollX = () => {
+  const columnCount = columns.length
+  const totalWidth = columns.reduce((total, column) => total + (column.width || 0), 0)
+  
+  // 如果列数少于5列，使用精确列宽总和
+  if (columnCount <= 5) {
+    return totalWidth
+  }
+  
+  // 如果列数较多，使用响应式宽度计算
+  // 这里可以调用 useDynamicTableScrollWidth 或者设置一个较大的固定值
+  return Math.max(totalWidth, 1200) // 确保至少1200px宽度
+}
+
+const tableScrollX = getTableScrollX()
+
+// 调试信息
+console.log('列数:', columns.length)
+console.log('列宽总和:', tableScrollX)
+console.log('表格滚动宽度策略:', columns.length <= 5 ? '精确列宽' : '响应式宽度')
 
 
 // 职业选项

@@ -10,7 +10,7 @@
 
       <!-- 用户列表组件 -->
       <UserList
-        :user-list="userList"
+        :user-data="currentUserList"
         :loading="loading"
         :pagination="pagination"
         @add="handleAdd"
@@ -50,6 +50,7 @@ const loading = ref(false)
 const editVisible = ref(false)
 const isEdit = ref(false)
 const editForm = reactive<UserFormData>(createEmptyUserFormData())
+const currentUserList = ref<User[]>([])
 const pagination = reactive<Pagination>({
   current: 1,
   pageSize: 10,
@@ -67,7 +68,7 @@ const jobOptions = [
   { label: '设计师', value: 5 }
 ]
 
-const userList = ref<User[]>([
+const allUserList = ref<User[]>([
   {
     key: '1',
     username: 'admin',
@@ -210,13 +211,15 @@ const userList = ref<User[]>([
   }
 ])
 
-const handleSearch = (searchParams?: { username: string; email: string; job?: number }) => {
+const handleSearch = (searchParams?: { username: string; email: string; job?: number; status?: string; role?: string }) => {
   loading.value = true
   // 模拟搜索延迟
   setTimeout(() => {
+    let filteredList = [...allUserList.value]
+    
     if (searchParams) {
       // 如果有搜索参数，进行过滤
-      const filteredList = userList.value.filter(user => {
+      filteredList = allUserList.value.filter(user => {
         let match = true
         
         // 用户名搜索（模糊匹配）
@@ -234,14 +237,27 @@ const handleSearch = (searchParams?: { username: string; email: string; job?: nu
           match = false
         }
         
+        // 状态搜索（精确匹配）
+        if (searchParams.status && user.status !== searchParams.status) {
+          match = false
+        }
+        
+        // 角色搜索（精确匹配）
+        if (searchParams.role && user.role !== searchParams.role) {
+          match = false
+        }
+        
         return match
       })
-      
-      pagination.total = filteredList.length
-    } else {
-      // 没有搜索参数，显示所有数据
-      pagination.total = userList.value.length
     }
+    
+    // 更新分页信息
+    pagination.total = filteredList.length
+    
+    // 计算当前页显示的数据
+    const startIndex = (pagination.current - 1) * pagination.pageSize
+    const endIndex = startIndex + pagination.pageSize
+    currentUserList.value = filteredList.slice(startIndex, endIndex)
     
     loading.value = false
   }, 500)
@@ -276,13 +292,20 @@ const handleEdit = (record: User) => {
 }
 
 const handleToggleStatus = (record: User) => {
-  record.status = record.status === 'active' ? 'inactive' : 'active'
+  const index = allUserList.value.findIndex(item => item.key === record.key)
+  if (index > -1) {
+    allUserList.value[index].status = allUserList.value[index].status === 'active' ? 'inactive' : 'active'
+    // 重新搜索以更新显示
+    handleSearch()
+  }
 }
 
 const handleDelete = (record: User) => {
-  const index = userList.value.findIndex(item => item.key === record.key)
+  const index = allUserList.value.findIndex(item => item.key === record.key)
   if (index > -1) {
-    userList.value.splice(index, 1)
+    allUserList.value.splice(index, 1)
+    // 重新搜索以更新显示
+    handleSearch()
   }
 }
 
@@ -330,9 +353,11 @@ const handleEditOk = async (formData: UserFormData, isEditMode: boolean) => {
       const updatedUser = await response.json()
       
       // 更新本地数据
-      const index = userList.value.findIndex(item => item.key === formData.key)
+      const index = allUserList.value.findIndex(item => item.key === formData.key)
       if (index > -1) {
-        Object.assign(userList.value[index], updatedUser)
+        Object.assign(allUserList.value[index], updatedUser)
+        // 重新搜索以更新显示
+        handleSearch()
       }
     } else {
       // 调用新增API
@@ -352,7 +377,9 @@ const handleEditOk = async (formData: UserFormData, isEditMode: boolean) => {
       const newUser = await response.json()
       
       // 添加到本地数据
-      userList.value.unshift(newUser)
+      allUserList.value.unshift(newUser)
+      // 重新搜索以更新显示
+      handleSearch()
     }
     
     clearTimeout(timeoutId)
