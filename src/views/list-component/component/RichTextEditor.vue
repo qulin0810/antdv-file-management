@@ -122,6 +122,9 @@ const imageHeight = ref<number | null>(null);
 const maintainAspectRatio = ref(true);
 const originalAspectRatio = ref(1);
 
+// 存储图片File对象的Map，key为图片URL或临时标识
+const imageFileMap = new Map<string, File>();
+
 // Quill 配置
 const quillOptions = {
   modules: {
@@ -152,19 +155,21 @@ const quillOptions = {
 
 // 图片处理函数
 function imageHandler() {
+  debugger
   const input = document.createElement('input');
   input.setAttribute('type', 'file');
   input.setAttribute('accept', 'image/*');
   input.click();
-  
+  debugger
   input.onchange = async () => {
     const file = input.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+      try {
+        // 上传图片到后端
+        const imageUrl = await uploadImageToServer(file);
+        
         const range = quill?.getSelection();
-        if (range) {
-          const imageUrl = e.target?.result as string;
+        if (range && imageUrl) {
           quill?.insertEmbed(range.index, 'image', imageUrl);
           
           // 添加图片点击事件监听
@@ -172,16 +177,46 @@ function imageHandler() {
             addImageClickListeners();
           }, 100);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('图片上传失败:', error);
+        message.error('图片上传失败，请重试');
+      }
     }
   };
+}
+
+// 上传图片到服务器
+async function uploadImageToServer(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  try {
+    const response = await fetch('/api/upload/image', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`上传失败: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    // 假设后端返回的数据结构为 { success: true, data: { url: '图片URL' } }
+    if (result.success && result.data && result.data.url) {
+      return result.data.url;
+    } else {
+      throw new Error('上传响应格式错误');
+    }
+  } catch (error) {
+    console.error('图片上传失败:', error);
+    throw error;
+  }
 }
 
 // 添加图片点击事件监听
 function addImageClickListeners() {
   if (!quill) return;
-  debugger
 
   const editor = quill.root;
   const images = editor.querySelectorAll('img');
@@ -196,7 +231,56 @@ function addImageClickListeners() {
     img.style.cursor = 'pointer';
     img.style.border = '2px dashed transparent';
     img.style.transition = 'border-color 0.3s';
+    
+    // 在addImageClickListeners中获取File对象
+    const file = getImageFile(img);
+    if (file) {
+      console.log('在addImageClickListeners中获取到File对象:', file);
+      // 这里可以处理File对象，比如上传到其他接口等
+      handleImageFileInAddImageClickListeners(file, img);
+    }
   });
+}
+
+// 根据图片元素获取对应的File对象
+function getImageFile(img: HTMLImageElement): File | null {
+  const src = img.src;
+  return imageFileMap.get(src) || null;
+}
+
+// 在addImageClickListeners中处理File对象
+function handleImageFileInAddImageClickListeners(file: File, img: HTMLImageElement) {
+  // 这里可以调用其他后端接口，比如上传到不同的URL
+  // 例如：uploadToAnotherEndpoint(file, img);
+  console.log('处理图片File:', file.name, file.size, file.type);
+  
+  // 示例：可以在这里调用另一个上传接口
+  // uploadToCustomEndpoint(file).then(url => {
+  //   // 处理上传后的逻辑
+  // });
+}
+
+// 示例：上传到自定义端点的函数
+async function uploadToCustomEndpoint(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  try {
+    const response = await fetch('/api/custom/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`自定义上传失败: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    return result.url;
+  } catch (error) {
+    console.error('自定义上传失败:', error);
+    throw error;
+  }
 }
 
 // 处理图片点击
@@ -242,7 +326,7 @@ function addDeleteButton(img: HTMLImageElement) {
   removeDeleteButton(img);
   
   const deleteBtn = document.createElement('button');
-  deleteBtn.innerHTML = '×';
+  deleteBtn.innerHTML = '┌ ┐';
   deleteBtn.style.cssText = `
     position: absolute;
     top: -8px;

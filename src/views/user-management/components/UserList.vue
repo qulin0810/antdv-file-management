@@ -7,6 +7,18 @@
           <template #icon><user-add-outlined /></template>
           新增用户
         </a-button>
+        <a-upload
+          name="file"
+          :show-upload-list="false"
+          :before-upload="beforeUpload"
+          :custom-request="handleUpload"
+          accept="image/*"
+        >
+          <a-button type="primary" :loading="uploading">
+            <template #icon><upload-outlined /></template>
+            上传图片
+          </a-button>
+        </a-upload>
       </a-space>
     </div>
 
@@ -83,9 +95,13 @@
 </template>
 
 <script setup lang="ts">
-import { UserAddOutlined, UserOutlined } from '@ant-design/icons-vue'
+import { ref } from 'vue'
+import { UserAddOutlined, UserOutlined, UploadOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import type { User, Pagination } from '../types'
 import { SubmitStatus } from '../types'
+
+const uploading = ref(false)
 
 defineOptions({
   name: 'UserList'
@@ -287,6 +303,77 @@ const handleReupload = (record: User) => {
 
 const handleTableChange = (pag: any, filters: any, sorter: any, extra: any) => {
   emit('table-change', pag, filters, sorter, extra)
+}
+
+// 上传前验证
+const beforeUpload = (file: File) => {
+  const isImage = file.type.startsWith('image/')
+  if (!isImage) {
+    message.error('只能上传图片文件!')
+    return false
+  }
+  
+  const isLt2M = file.size / 1024 / 1024 < 2
+  if (!isLt2M) {
+    message.error('图片大小不能超过 2MB!')
+    return false
+  }
+  
+  return true
+}
+
+// 自定义上传处理
+const handleUpload = async (options: any) => {
+  const { file, onSuccess, onError, onProgress } = options
+  
+  uploading.value = true
+  
+  try {
+    // 创建FormData
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    // 模拟上传进度
+    let progress = 0
+    const progressInterval = setInterval(() => {
+      progress += 10
+      if (progress <= 100) {
+        onProgress({ percent: progress })
+      } else {
+        clearInterval(progressInterval)
+      }
+    }, 100)
+    
+    // 调用后端上传接口
+    const response = await fetch('/api/upload/image', {
+      method: 'POST',
+      body: formData,
+    })
+    
+    clearInterval(progressInterval)
+    
+    if (!response.ok) {
+      throw new Error(`上传失败: ${response.status} ${response.statusText}`)
+    }
+    
+    const result = await response.json()
+    
+    // 模拟成功回调
+    setTimeout(() => {
+      onSuccess(result, file)
+      message.success('图片上传成功!')
+      uploading.value = false
+      
+      // 这里可以处理上传成功后的逻辑，比如更新用户头像等
+      console.log('上传成功:', result)
+    }, 500)
+    
+  } catch (error) {
+    uploading.value = false
+    onError(error)
+    message.error('图片上传失败，请重试!')
+    console.error('上传失败:', error)
+  }
 }
 </script>
 
