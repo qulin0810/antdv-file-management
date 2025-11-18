@@ -4,13 +4,6 @@
       <template #extra>
         <a-space>
           <a-button @click="handleClear">清空</a-button>
-          <a-button
-            :disabled="!selectedImage"
-            :type="selectedImage ? 'primary' : 'default'"
-            @click="showImageSizeModal"
-          >
-            修改图片大小
-          </a-button>
           <a-button type="primary" @click="handleSave">保存</a-button>
         </a-space>
       </template>
@@ -189,6 +182,7 @@ function imageHandler() {
 function addImageClickListeners() {
   if (!quill) return;
   debugger
+
   const editor = quill.root;
   const images = editor.querySelectorAll('img');
   
@@ -407,8 +401,78 @@ onMounted(() => {
         }
       }
     });
+    
+    // 添加自定义图片大小调整按钮到工具栏
+    setTimeout(() => {
+      addImageSizeButtonToToolbar();
+    }, 100);
   }
 });
+
+// 添加图片大小调整按钮到工具栏
+function addImageSizeButtonToToolbar() {
+  if (!quill) return;
+  
+  // 直接通过DOM查找工具栏元素
+  const toolbarElement = document.querySelector('.ql-toolbar');
+  if (!toolbarElement) return;
+  
+  // 创建图片大小调整按钮
+  const imageSizeButton = document.createElement('button');
+  imageSizeButton.innerHTML = '<button>修改图片</button>';
+  imageSizeButton.title = '修改图片大小';
+  imageSizeButton.style.cssText = `
+    width: 100px;
+    height: 28px;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #444;
+    transition: all 0.2s;
+    margin-left: 8px;
+  `;
+  
+  // 初始状态
+  updateImageSizeButtonState(false);
+  
+  imageSizeButton.addEventListener('click', () => {
+    if (!selectedImage.value) {
+      message.warning('请先选择一张图片');
+      return;
+    }
+    showImageSizeModal();
+  });
+  
+  // 将按钮添加到工具栏
+  toolbarElement.appendChild(imageSizeButton);
+  
+  // 监听选中图片变化，更新按钮状态
+  watch(selectedImage, (newImage) => {
+    updateImageSizeButtonState(!!newImage);
+  });
+  
+  // 更新按钮状态
+  function updateImageSizeButtonState(enabled: boolean) {
+    if (enabled) {
+      imageSizeButton.disabled = false;
+      imageSizeButton.style.backgroundColor = '#1890ff';
+      imageSizeButton.style.color = 'white';
+      imageSizeButton.style.borderColor = '#1890ff';
+      imageSizeButton.style.cursor = 'pointer';
+    } else {
+      imageSizeButton.disabled = true;
+      imageSizeButton.style.backgroundColor = '#f5f5f5';
+      imageSizeButton.style.color = '#bfbfbf';
+      imageSizeButton.style.borderColor = '#d9d9d9';
+      imageSizeButton.style.cursor = 'not-allowed';
+    }
+  }
+}
 
 // 监听外部内容变化
 watch(() => props.modelValue, (newValue) => {
@@ -555,6 +619,7 @@ onUnmounted(() => {
 :deep(.ql-editor a:hover) {
   text-decoration: underline;
 }
+
 
 .preview-section {
   margin-top: 16px;
