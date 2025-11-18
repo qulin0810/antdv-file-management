@@ -380,7 +380,6 @@ onMounted(() => {
       content.value = html;
       emit('update:modelValue', html);
       emit('change', html);
-      
       // 清理删除按钮
       cleanupDeleteButtons();
       
