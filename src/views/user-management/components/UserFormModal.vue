@@ -2,6 +2,7 @@
   <a-modal
     :open="visible"
     :title="isEdit ? '编辑用户' : '新增用户'"
+    width="800px"
     @ok="handleOk"
     @cancel="handleCancel"
   >
@@ -27,11 +28,27 @@
       <a-form-item label="职业" name="job">
         <a-select v-model:value="localFormData.job" placeholder="请选择职业" :options="props.jobOptions" />
       </a-form-item>
+      <a-form-item label="喜欢的宠物" name="pet">
+        <a-select v-model:value="localFormData.pet" placeholder="请选择宠物">
+          <a-select-option value="小猫">小猫</a-select-option>
+          <a-select-option value="小狗">小狗</a-select-option>
+        </a-select>
+      </a-form-item>
       <a-form-item label="状态" name="status">
         <a-radio-group v-model:value="localFormData.status">
           <a-radio value="active">启用</a-radio>
           <a-radio value="inactive">禁用</a-radio>
         </a-radio-group>
+      </a-form-item>
+      
+      <!-- 富文本编辑器 -->
+      <a-form-item label="用户描述" name="richTextContent">
+        <RichTextEditor
+          v-model:modelValue="localFormData.richTextContent"
+          title="用户描述编辑器"
+          height="300px"
+          @save="handleRichTextSave"
+        />
       </a-form-item>
     </a-form>
   </a-modal>
@@ -41,6 +58,7 @@
 import { reactive, ref, watch } from 'vue'
 import type { UserFormData } from '../types'
 import { createEmptyUserFormData } from '../types'
+import RichTextEditor from '@/views/list-component/component/RichTextEditor.vue'
 
 defineOptions({
   name: 'UserFormModal'
@@ -81,6 +99,9 @@ const rules = {
   job: [
     { required: true, message: '请选择职业', trigger: 'change' }
   ],
+  pet: [
+    { required: false, message: '请选择宠物', trigger: 'change' }
+  ],
   status: [
     { required: true, message: '请选择状态', trigger: 'change' }
   ]
@@ -110,6 +131,11 @@ const handleOk = async () => {
   } catch (error) {
     console.log('表单验证失败:', error)
   }
+}
+
+const handleRichTextSave = (content: string) => {
+  localFormData.richTextContent = content
+  console.log('富文本内容已保存:', content)
 }
 
 const handleCancel = () => {

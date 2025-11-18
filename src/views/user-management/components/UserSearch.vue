@@ -85,7 +85,28 @@
           </a-form-item>
         </a-col>
         <a-col :span="6">
-          <!-- 占位符，确保布局一致 -->
+          <a-form-item label="提交状态" name="submitStatus">
+            <a-select
+              v-model:value="searchForm.submitStatus"
+              placeholder="请选择提交状态"
+              allow-clear
+              :options="submitStatusOptions"
+            />
+          </a-form-item>
+        </a-col>
+      </a-row>
+      
+      <!-- 第三行：宠物搜索条件 -->
+      <a-row :gutter="16" v-if="expanded">
+        <a-col :span="6">
+          <a-form-item label="喜欢的宠物" name="pet">
+            <a-select
+              v-model:value="searchForm.pet"
+              placeholder="请选择宠物"
+              allow-clear
+              :options="petOptions"
+            />
+          </a-form-item>
         </a-col>
       </a-row>
     </a-form>
@@ -95,6 +116,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { SearchOutlined, ReloadOutlined, DownOutlined, UpOutlined } from '@ant-design/icons-vue'
+import { SubmitStatus } from '../types'
 
 defineOptions({
   name: 'UserSearch'
@@ -107,7 +129,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  search: [form: { username: string; email: string; job?: number; status?: string; role?: string }]
+  search: [form: { username: string; email: string; job?: number; status?: string; role?: string; submitStatus?: SubmitStatus; pet?: string }]
   reset: []
 }>()
 
@@ -118,7 +140,9 @@ const searchForm = reactive({
   email: '',
   job: undefined as number | undefined,
   status: undefined as string | undefined,
-  role: undefined as string | undefined
+  role: undefined as string | undefined,
+  submitStatus: undefined as SubmitStatus | undefined,
+  pet: undefined as string | undefined
 })
 
 // 职业选项
@@ -141,6 +165,20 @@ const roleOptions = [
   { label: '管理员', value: 'admin' },
   { label: '普通用户', value: 'user' },
   { label: '访客', value: 'guest' }
+]
+
+// 提交状态选项
+const submitStatusOptions = [
+  { label: '成功', value: SubmitStatus.SUCCESS },
+  { label: '失败', value: SubmitStatus.FAILED },
+  { label: '进行中', value: SubmitStatus.PROCESSING },
+  { label: '重新上传', value: SubmitStatus.REUPLOAD }
+]
+
+// 宠物选项
+const petOptions = [
+  { label: '小猫', value: '小猫' },
+  { label: '小狗', value: '小狗' }
 ]
 
 const handleSearch = () => {

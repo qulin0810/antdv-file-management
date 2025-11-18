@@ -1,16 +1,27 @@
+// 状态枚举定义
+export enum SubmitStatus {
+  SUCCESS = 1,     // 成功
+  FAILED = 2,      // 失败
+  PROCESSING = 3,  // 进行中
+  REUPLOAD = 4     // 重新上传
+}
+
 export interface User {
   key: string
   username: string
   email: string
   role: string
   status: string
+  submitStatus?: SubmitStatus  // 提交状态
   job?: number
+  pet?: string                 // 喜欢的宠物
   createTime: string
   department?: string
   position?: string
   phone?: string
   address?: string
   remark?: string
+  richTextContent?: string     // 富文本内容
 }
 
 export interface Pagination {
@@ -27,8 +38,11 @@ export interface UserFormData {
   email: string
   role: string
   status: string
+  submitStatus?: SubmitStatus
   job?: number
+  pet?: string                 // 喜欢的宠物
   key?: string
+  richTextContent?: string
 }
 
 export const createEmptyUserFormData = (): UserFormData => ({
@@ -36,5 +50,7 @@ export const createEmptyUserFormData = (): UserFormData => ({
   email: '',
   role: '',
   status: '',
-  job: undefined
+  job: undefined,
+  pet: undefined,
+  richTextContent: ''
 })

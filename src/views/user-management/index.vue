@@ -18,6 +18,8 @@
         @toggle-status="handleToggleStatus"
         @delete="handleDelete"
         @table-change="handleTableChange"
+        @retry="handleRetry"
+        @reupload="handleReupload"
       />
     </a-card>
 
@@ -40,7 +42,7 @@ import UserSearch from './components/UserSearch.vue'
 import UserList from './components/UserList.vue'
 import UserFormModal from './components/UserFormModal.vue'
 import type { User, UserFormData, Pagination } from './types'
-import { createEmptyUserFormData } from './types'
+import { createEmptyUserFormData, SubmitStatus } from './types'
 
 defineOptions({
   name: 'UserManagement'
@@ -68,6 +70,12 @@ const jobOptions = [
   { label: '设计师', value: 5 }
 ]
 
+// 宠物选项
+const petOptions = [
+  { label: '小猫', value: '小猫' },
+  { label: '小狗', value: '小狗' }
+]
+
 const allUserList = ref<User[]>([
   {
     key: '1',
@@ -75,13 +83,16 @@ const allUserList = ref<User[]>([
     email: 'admin@example.com',
     role: 'admin',
     job: 2, // IT
+    pet: '小猫',
     status: 'active',
+    submitStatus: SubmitStatus.SUCCESS,
     createTime: '2024-01-15 10:30',
     department: '技术部',
     position: '系统管理员',
     phone: '13800138001',
     address: '北京市朝阳区建国门外大街1号',
-    remark: '系统管理员，负责系统维护'
+    remark: '系统管理员，负责系统维护',
+    richTextContent: '<p>系统管理员账户，拥有最高权限。</p><p>负责系统维护和用户管理。</p>'
   },
   {
     key: '2',
@@ -89,13 +100,16 @@ const allUserList = ref<User[]>([
     email: 'user1@example.com',
     role: 'user',
     job: 1, // 老师
+    pet: '小狗',
     status: 'active',
+    submitStatus: SubmitStatus.FAILED,
     createTime: '2024-01-16 14:20',
     department: '教学部',
     position: '高级讲师',
     phone: '13800138002',
     address: '上海市浦东新区陆家嘴金融中心',
-    remark: '负责前端开发课程教学'
+    remark: '负责前端开发课程教学',
+    richTextContent: '<p>前端开发讲师，擅长Vue.js和React。</p>'
   },
   {
     key: '3',
@@ -103,13 +117,16 @@ const allUserList = ref<User[]>([
     email: 'user2@example.com',
     role: 'user',
     job: 3, // 医生
+    pet: '小猫',
     status: 'inactive',
+    submitStatus: SubmitStatus.PROCESSING,
     createTime: '2024-01-17 09:15',
     department: '医疗部',
     position: '主治医师',
     phone: '13800138003',
     address: '广州市天河区珠江新城',
-    remark: '内科主治医师，擅长心血管疾病'
+    remark: '内科主治医师，擅长心血管疾病',
+    richTextContent: '<p>心血管内科专家，拥有10年临床经验。</p>'
   },
   {
     key: '4',
@@ -117,13 +134,16 @@ const allUserList = ref<User[]>([
     email: 'guest1@example.com',
     role: 'guest',
     job: 4, // 工程师
+    pet: '小狗',
     status: 'active',
+    submitStatus: SubmitStatus.REUPLOAD,
     createTime: '2024-01-18 16:45',
     department: '研发部',
     position: '高级工程师',
     phone: '13800138004',
     address: '深圳市南山区科技园',
-    remark: '负责后端系统架构设计'
+    remark: '负责后端系统架构设计',
+    richTextContent: '<p>后端架构师，精通微服务和分布式系统。</p>'
   },
   {
     key: '5',
@@ -131,13 +151,16 @@ const allUserList = ref<User[]>([
     email: 'guest2@example.com',
     role: 'guest',
     job: 5, // 设计师
+    pet: '小猫',
     status: 'active',
+    submitStatus: SubmitStatus.SUCCESS,
     createTime: '2024-01-19 11:30',
     department: '设计部',
     position: 'UI设计师',
     phone: '13800138005',
     address: '杭州市西湖区文三路',
-    remark: '负责产品界面设计和用户体验优化'
+    remark: '负责产品界面设计和用户体验优化',
+    richTextContent: '<p>UI/UX设计师，专注于用户体验设计。</p>'
   },
   {
     key: '6',
@@ -145,13 +168,16 @@ const allUserList = ref<User[]>([
     email: 'manager1@example.com',
     role: 'admin',
     job: 2, // IT
+    pet: '小狗',
     status: 'active',
+    submitStatus: SubmitStatus.FAILED,
     createTime: '2024-01-20 08:45',
     department: '管理部',
     position: '项目经理',
     phone: '13800138006',
     address: '成都市武侯区天府软件园',
-    remark: '负责项目管理与团队协调'
+    remark: '负责项目管理与团队协调',
+    richTextContent: '<p>项目经理，擅长敏捷开发和团队管理。</p>'
   },
   {
     key: '7',
@@ -159,13 +185,16 @@ const allUserList = ref<User[]>([
     email: 'teacher1@example.com',
     role: 'user',
     job: 1, // 老师
+    pet: '小猫',
     status: 'active',
+    submitStatus: SubmitStatus.PROCESSING,
     createTime: '2024-01-21 13:20',
     department: '教学部',
     position: '课程顾问',
     phone: '13800138007',
     address: '南京市鼓楼区新街口',
-    remark: '负责课程咨询和学员服务'
+    remark: '负责课程咨询和学员服务',
+    richTextContent: '<p>课程顾问，提供专业的学习建议。</p>'
   },
   {
     key: '8',
@@ -173,13 +202,16 @@ const allUserList = ref<User[]>([
     email: 'doctor1@example.com',
     role: 'user',
     job: 3, // 医生
+    pet: '小狗',
     status: 'active',
+    submitStatus: SubmitStatus.SUCCESS,
     createTime: '2024-01-22 10:15',
     department: '医疗部',
     position: '副主任医师',
     phone: '13800138008',
     address: '武汉市武昌区光谷',
-    remark: '外科副主任医师，擅长微创手术'
+    remark: '外科副主任医师，擅长微创手术',
+    richTextContent: '<p>外科专家，精通微创手术技术。</p>'
   },
   {
     key: '9',
@@ -187,13 +219,16 @@ const allUserList = ref<User[]>([
     email: 'engineer1@example.com',
     role: 'user',
     job: 4, // 工程师
+    pet: '小猫',
     status: 'inactive',
+    submitStatus: SubmitStatus.REUPLOAD,
     createTime: '2024-01-23 15:30',
     department: '研发部',
     position: '测试工程师',
     phone: '13800138009',
     address: '西安市雁塔区高新区',
-    remark: '负责软件测试和质量保证'
+    remark: '负责软件测试和质量保证',
+    richTextContent: '<p>测试工程师，专注于自动化测试。</p>'
   },
   {
     key: '10',
@@ -201,17 +236,20 @@ const allUserList = ref<User[]>([
     email: 'designer1@example.com',
     role: 'user',
     job: 5, // 设计师
+    pet: '小狗',
     status: 'active',
+    submitStatus: SubmitStatus.FAILED,
     createTime: '2024-01-24 11:45',
     department: '设计部',
     position: '交互设计师',
     phone: '13800138010',
     address: '重庆市渝北区光电园',
-    remark: '负责产品交互设计和原型制作'
+    remark: '负责产品交互设计和原型制作',
+    richTextContent: '<p>交互设计师，专注于用户体验研究。</p>'
   }
 ])
 
-const handleSearch = (searchParams?: { username: string; email: string; job?: number; status?: string; role?: string }) => {
+const handleSearch = (searchParams?: { username: string; email: string; job?: number; status?: string; role?: string; submitStatus?: SubmitStatus; pet?: string }) => {
   loading.value = true
   // 模拟搜索延迟
   setTimeout(() => {
@@ -244,6 +282,16 @@ const handleSearch = (searchParams?: { username: string; email: string; job?: nu
         
         // 角色搜索（精确匹配）
         if (searchParams.role && user.role !== searchParams.role) {
+          match = false
+        }
+        
+        // 提交状态搜索（精确匹配）
+        if (searchParams.submitStatus && user.submitStatus !== searchParams.submitStatus) {
+          match = false
+        }
+        
+        // 宠物搜索（精确匹配）
+        if (searchParams.pet && user.pet !== searchParams.pet) {
           match = false
         }
         
@@ -291,10 +339,10 @@ const handleEdit = (record: User) => {
   editVisible.value = true
 }
 
-const handleToggleStatus = (record: User) => {
+const handleToggleStatus = (record: User, newStatus: string) => {
   const index = allUserList.value.findIndex(item => item.key === record.key)
   if (index > -1) {
-    allUserList.value[index].status = allUserList.value[index].status === 'active' ? 'inactive' : 'active'
+    allUserList.value[index].status = newStatus
     // 重新搜索以更新显示
     handleSearch()
   }
@@ -332,6 +380,12 @@ const handleEditOk = async (formData: UserFormData, isEditMode: boolean) => {
 
   loading.value = true
   try {
+    // 模拟提交状态跟踪
+    // 如果有富文本内容，设置提交状态为进行中
+    if (formData.richTextContent && formData.richTextContent.trim()) {
+      formData.submitStatus = SubmitStatus.PROCESSING
+    }
+
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
 
@@ -355,6 +409,14 @@ const handleEditOk = async (formData: UserFormData, isEditMode: boolean) => {
       // 更新本地数据
       const index = allUserList.value.findIndex(item => item.key === formData.key)
       if (index > -1) {
+        // 模拟提交状态结果
+        if (formData.richTextContent && formData.richTextContent.trim()) {
+          // 随机设置提交状态结果（模拟实际业务场景）
+          const randomStatus = Math.random() > 0.3 ? SubmitStatus.SUCCESS : SubmitStatus.FAILED
+          updatedUser.submitStatus = randomStatus
+          updatedUser.richTextContent = formData.richTextContent
+        }
+        
         Object.assign(allUserList.value[index], updatedUser)
         // 重新搜索以更新显示
         handleSearch()
@@ -376,6 +438,14 @@ const handleEditOk = async (formData: UserFormData, isEditMode: boolean) => {
       
       const newUser = await response.json()
       
+      // 模拟提交状态结果
+      if (formData.richTextContent && formData.richTextContent.trim()) {
+        // 随机设置提交状态结果（模拟实际业务场景）
+        const randomStatus = Math.random() > 0.3 ? SubmitStatus.SUCCESS : SubmitStatus.FAILED
+        newUser.submitStatus = randomStatus
+        newUser.richTextContent = formData.richTextContent
+      }
+      
       // 添加到本地数据
       allUserList.value.unshift(newUser)
       // 重新搜索以更新显示
@@ -389,11 +459,23 @@ const handleEditOk = async (formData: UserFormData, isEditMode: boolean) => {
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
         console.error('请求超时，请重试')
+        // 设置提交状态为失败
+        if (formData.richTextContent && formData.richTextContent.trim()) {
+          formData.submitStatus = SubmitStatus.FAILED
+        }
       } else {
         console.error('操作失败:', error.message)
+        // 设置提交状态为失败
+        if (formData.richTextContent && formData.richTextContent.trim()) {
+          formData.submitStatus = SubmitStatus.FAILED
+        }
       }
     } else {
       console.error('操作失败:', error)
+      // 设置提交状态为失败
+      if (formData.richTextContent && formData.richTextContent.trim()) {
+        formData.submitStatus = SubmitStatus.FAILED
+      }
     }
     // 这里可以添加错误提示，比如使用 message 组件
     // message.error('操作失败，请重试')
@@ -404,6 +486,40 @@ const handleEditOk = async (formData: UserFormData, isEditMode: boolean) => {
 
 const handleEditCancel = () => {
   // 可以在这里添加取消时的清理逻辑
+}
+
+// 处理重试操作
+const handleRetry = (record: User) => {
+  const index = allUserList.value.findIndex(item => item.key === record.key)
+  if (index > -1) {
+    // 设置状态为进行中
+    allUserList.value[index].submitStatus = SubmitStatus.PROCESSING
+    // 模拟重试过程
+    setTimeout(() => {
+      // 随机设置重试结果
+      const randomStatus = Math.random() > 0.5 ? SubmitStatus.SUCCESS : SubmitStatus.FAILED
+      allUserList.value[index].submitStatus = randomStatus
+      // 重新搜索以更新显示
+      handleSearch()
+    }, 2000)
+  }
+}
+
+// 处理重新上传操作
+const handleReupload = (record: User) => {
+  const index = allUserList.value.findIndex(item => item.key === record.key)
+  if (index > -1) {
+    // 设置状态为进行中
+    allUserList.value[index].submitStatus = SubmitStatus.PROCESSING
+    // 模拟重新上传过程
+    setTimeout(() => {
+      // 随机设置重新上传结果
+      const randomStatus = Math.random() > 0.7 ? SubmitStatus.SUCCESS : SubmitStatus.REUPLOAD
+      allUserList.value[index].submitStatus = randomStatus
+      // 重新搜索以更新显示
+      handleSearch()
+    }, 2000)
+  }
 }
 
 onMounted(() => {
