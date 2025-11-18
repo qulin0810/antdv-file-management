@@ -9,81 +9,8 @@
       </template>
       
       <div class="editor-wrapper">
-        <!-- 工具栏 -->
-        <div class="toolbar">
-          <a-space :size="8" wrap>
-            <a-button-group>
-              <a-button @click="formatText('bold')" title="粗体">
-                <template #icon><b-icon /></template>
-              </a-button>
-              <a-button @click="formatText('italic')" title="斜体">
-                <template #icon><i-icon /></template>
-              </a-button>
-              <a-button @click="formatText('underline')" title="下划线">
-                <template #icon><u-icon /></template>
-              </a-button>
-            </a-button-group>
-            
-            <a-button-group>
-              <a-button @click="formatText('header', 1)" title="标题1">H1</a-button>
-              <a-button @click="formatText('header', 2)" title="标题2">H2</a-button>
-              <a-button @click="formatText('header', 3)" title="标题3">H3</a-button>
-            </a-button-group>
-            
-            <a-button-group>
-              <a-button @click="formatText('list', 'ordered')" title="有序列表">
-                <template #icon><ordered-list-outlined /></template>
-              </a-button>
-              <a-button @click="formatText('list', 'bullet')" title="无序列表">
-                <template #icon><unordered-list-outlined /></template>
-              </a-button>
-            </a-button-group>
-            
-            <a-button-group>
-              <a-button @click="formatText('align', 'left')" title="左对齐">
-                <template #icon><align-left-outlined /></template>
-              </a-button>
-              <a-button @click="formatText('align', 'center')" title="居中对齐">
-                <template #icon><align-center-outlined /></template>
-              </a-button>
-              <a-button @click="formatText('align', 'right')" title="右对齐">
-                <template #icon><align-right-outlined /></template>
-              </a-button>
-            </a-button-group>
-            
-            <a-upload
-              :show-upload-list="false"
-              :before-upload="beforeImageUpload"
-              accept="image/*"
-            >
-              <a-button title="插入图片">
-                <template #icon><picture-outlined /></template>
-                插入图片
-              </a-button>
-            </a-upload>
-            
-            <a-button @click="insertLink" title="插入链接">
-              <template #icon><link-outlined /></template>
-              链接
-            </a-button>
-            
-            <a-button @click="showImageSizeModal" title="调整图片大小" :disabled="!selectedImage">
-              <template #icon><expand-outlined /></template>
-              调整图片
-            </a-button>
-          </a-space>
-        </div>
-        
-        <!-- 编辑器区域 -->
-        <div
-          ref="editorRef"
-          class="editor-content"
-          contenteditable="true"
-          @input="handleInput"
-          @paste="handlePaste"
-          @keydown="handleKeydown"
-          @click="handleEditorClick"
-        ></div>
+        <!-- Quill 编辑器 -->
+        <div ref="editorRef" class="quill-editor"></div>
         
         <!-- 预览区域 -->
         <div class="preview-section" v-if="showPreview">
@@ -91,24 +18,7 @@
           <div class="preview-content" v-html="content"></div>
         </div>
       </div>
-      
-      <!-- 链接弹窗 -->
-      <a-modal
-        v-model:visible="linkModalVisible"
-        title="插入链接"
-        @ok="confirmLink"
-        @cancel="cancelLink"
-      >
-        <a-form layout="vertical">
-          <a-form-item label="链接地址">
-            <a-input v-model:value="linkUrl" placeholder="请输入链接地址" />
-          </a-form-item>
-          <a-form-item label="链接文本">
-            <a-input v-model:value="linkText" placeholder="请输入链接文本" />
-          </a-form-item>
-        </a-form>
-      </a-modal>
-      
+
       <!-- 图片大小调整弹窗 -->
       <a-modal
         v-model:visible="imageSizeModalVisible"
@@ -150,9 +60,9 @@
             <a-switch v-model:checked="maintainAspectRatio" />
           </a-form-item>
           <a-space>
-            <a-button @click="setImageSize(100, 100)">小 (100x100)</a-button>
+            <!-- <a-button @click="setImageSize(100, 100)">小 (100x100)</a-button>
             <a-button @click="setImageSize(300, 200)">中 (300x200)</a-button>
-            <a-button @click="setImageSize(500, 300)">大 (500x300)</a-button>
+            <a-button @click="setImageSize(500, 300)">大 (500x300)</a-button> -->
             <a-button @click="resetImageSize">重置</a-button>
           </a-space>
         </a-form>
@@ -162,22 +72,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
-import type { UploadProps } from 'ant-design-vue';
-import {
-  BoldOutlined as BIcon,
-  ItalicOutlined as IIcon,
-  UnderlineOutlined as UIcon,
-  OrderedListOutlined,
-  UnorderedListOutlined,
-  AlignLeftOutlined,
-  AlignCenterOutlined,
-  AlignRightOutlined,
-  PictureOutlined,
-  LinkOutlined,
-  ExpandOutlined,
-} from '@ant-design/icons-vue';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
 
 interface Props {
   modelValue?: string;
@@ -201,9 +99,7 @@ const emit = defineEmits<{
 
 const editorRef = ref<HTMLElement>();
 const content = ref(props.modelValue);
-const linkModalVisible = ref(false);
-const linkUrl = ref('');
-const linkText = ref('');
+let quill: Quill | null = null;
 
 // 图片大小调整相关变量
 const imageSizeModalVisible = ref(false);
@@ -213,153 +109,105 @@ const imageHeight = ref<number | null>(null);
 const maintainAspectRatio = ref(true);
 const originalAspectRatio = ref(1);
 
-// 初始化编辑器
-onMounted(() => {
-  if (editorRef.value) {
-    editorRef.value.innerHTML = content.value;
-  }
-});
-
-// 监听内容变化
-watch(content, (newValue) => {
-  emit('update:modelValue', newValue);
-  emit('change', newValue);
-});
-
-// 处理输入
-const handleInput = (event: Event) => {
-  const target = event.target as HTMLElement;
-  content.value = target.innerHTML;
-};
-
-// 格式化文本
-const formatText = (command: string, value?: any) => {
-  if (!editorRef.value) return;
-  
-  document.execCommand(command, false, value);
-  editorRef.value.focus();
-  content.value = editorRef.value.innerHTML;
-};
-
-// 处理粘贴事件（处理图片粘贴）
-const handlePaste = (event: ClipboardEvent) => {
-  const items = event.clipboardData?.items;
-  if (!items) return;
-  
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.type.indexOf('image') !== -1) {
-      event.preventDefault();
-      const file = item.getAsFile();
-      if (file) {
-        handleImageUpload(file);
+// Quill 配置
+const quillOptions = {
+  modules: {
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'font': [] }],
+        [{ 'size': ['small', false, 'large', 'huge'] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'direction': 'rtl' }],
+        [{ 'align': [] }],
+        ['blockquote', 'code-block'],
+        ['link', 'image', 'video'],
+        ['clean']
+      ],
+      handlers: {
+        'image': imageHandler
       }
-      break;
     }
-  }
+  },
+  theme: 'snow',
+  placeholder: '请输入内容...'
 };
 
-// 处理键盘事件
-const handleKeydown = (event: KeyboardEvent) => {
-  // 处理 Ctrl+B, Ctrl+I, Ctrl+U 等快捷键
-  if (event.ctrlKey || event.metaKey) {
-    switch (event.key) {
-      case 'b':
-        event.preventDefault();
-        formatText('bold');
-        break;
-      case 'i':
-        event.preventDefault();
-        formatText('italic');
-        break;
-      case 'u':
-        event.preventDefault();
-        formatText('underline');
-        break;
-    }
-  }
-};
-
-// 图片上传前处理
-const beforeImageUpload: UploadProps['beforeUpload'] = (file) => {
-  handleImageUpload(file);
-  return false; // 阻止默认上传行为
-};
-
-// 处理图片上传
-const handleImageUpload = (file: File) => {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const imageUrl = e.target?.result as string;
-    if (editorRef.value) {
-      document.execCommand('insertImage', false, imageUrl);
-      editorRef.value.focus();
-      content.value = editorRef.value.innerHTML;
+// 图片处理函数
+function imageHandler() {
+  const input = document.createElement('input');
+  input.setAttribute('type', 'file');
+  input.setAttribute('accept', 'image/*');
+  input.click();
+  
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const range = quill?.getSelection();
+        if (range) {
+          const imageUrl = e.target?.result as string;
+          quill?.insertEmbed(range.index, 'image', imageUrl);
+          
+          // 添加图片点击事件监听
+          setTimeout(() => {
+            addImageClickListeners();
+          }, 100);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
-  reader.readAsDataURL(file);
-};
+}
 
-// 插入链接
-const insertLink = () => {
-  linkModalVisible.value = true;
-  linkUrl.value = '';
-  linkText.value = '';
-};
-
-// 确认插入链接
-const confirmLink = () => {
-  if (!linkUrl.value) {
-    message.warning('请输入链接地址');
-    return;
-  }
-  
-  if (editorRef.value) {
-    const linkHtml = linkText.value 
-      ? `<a href="${linkUrl.value}" target="_blank">${linkText.value}</a>`
-      : `<a href="${linkUrl.value}" target="_blank">${linkUrl.value}</a>`;
-    
-    document.execCommand('insertHTML', false, linkHtml);
-    editorRef.value.focus();
-    content.value = editorRef.value.innerHTML;
-  }
-  
-  linkModalVisible.value = false;
-};
-
-// 取消插入链接
-const cancelLink = () => {
-  linkModalVisible.value = false;
-};
-
-// 清空内容
-const handleClear = () => {
-  if (editorRef.value) {
-    editorRef.value.innerHTML = '';
-    content.value = '';
-  }
-  message.success('内容已清空');
-};
-
-// 保存内容
-const handleSave = () => {
-  emit('save', content.value);
+// 添加图片点击事件监听
+function addImageClickListeners() {
   debugger
-  message.success('内容已保存');
-};
+  if (!quill) return;
+  
+  const editor = quill.root;
+  const images = editor.querySelectorAll('img');
+  
+  images.forEach(img => {
+    // 移除现有的事件监听器
+    img.removeEventListener('click', handleImageClick);
+    // 添加新的事件监听器
+    img.addEventListener('click', handleImageClick);
+    
+    // 添加可调整大小的样式
+    img.style.cursor = 'pointer';
+    img.style.border = '2px dashed transparent';
+    img.style.transition = 'border-color 0.3s';
+  });
+}
 
-// 处理编辑器点击事件（选择图片）
-const handleEditorClick = (event: MouseEvent) => {
-  const target = event.target as HTMLElement;
-  if (target.tagName === 'IMG') {
-    const imgElement = target as HTMLImageElement;
-    selectedImage.value = imgElement;
-    // 存储原始宽高比
-    originalAspectRatio.value = imgElement.naturalWidth / imgElement.naturalHeight;
-  } else {
-    selectedImage.value = null;
+// 处理图片点击
+function handleImageClick(event: Event) {
+  const img = event.target as HTMLImageElement;
+  selectedImage.value = img;
+  
+  // 添加选中样式
+  img.style.borderColor = '#1890ff';
+  
+  // 显示图片大小调整弹窗
+  showImageSizeModal();
+  
+  // 移除其他图片的选中样式
+  if (quill) {
+    const editor = quill.root;
+    const allImages = editor.querySelectorAll('img');
+    allImages.forEach(otherImg => {
+      if (otherImg !== img) {
+        otherImg.style.borderColor = 'transparent';
+      }
+    });
   }
-};
+}
 
 // 显示图片大小调整弹窗
 const showImageSizeModal = () => {
@@ -368,8 +216,9 @@ const showImageSizeModal = () => {
     return;
   }
   
-  imageWidth.value = selectedImage.value.width;
-  imageHeight.value = selectedImage.value.height;
+  imageWidth.value = selectedImage.value.width || selectedImage.value.naturalWidth;
+  imageHeight.value = selectedImage.value.height || selectedImage.value.naturalHeight;
+  originalAspectRatio.value = selectedImage.value.naturalWidth / selectedImage.value.naturalHeight;
   imageSizeModalVisible.value = true;
 };
 
@@ -386,8 +235,9 @@ const confirmImageSize = () => {
   selectedImage.value.style.height = `${imageHeight.value}px`;
   
   // 更新编辑器内容
-  if (editorRef.value) {
-    content.value = editorRef.value.innerHTML;
+  if (quill) {
+    content.value = quill.root.innerHTML;
+    emit('update:modelValue', content.value);
   }
   
   imageSizeModalVisible.value = false;
@@ -397,14 +247,17 @@ const confirmImageSize = () => {
 // 取消图片大小调整
 const cancelImageSize = () => {
   imageSizeModalVisible.value = false;
+  if (selectedImage.value) {
+    selectedImage.value.style.borderColor = 'transparent';
+  }
   selectedImage.value = null;
 };
 
 // 设置预设图片大小
-const setImageSize = (width: number, height: number) => {
-  imageWidth.value = width;
-  imageHeight.value = height;
-};
+// const setImageSize = (width: number, height: number) => {
+//   imageWidth.value = width;
+//   imageHeight.value = height;
+// };
 
 // 重置图片大小
 const resetImageSize = () => {
@@ -427,6 +280,67 @@ watch(imageHeight, (newHeight) => {
     imageWidth.value = Math.round(newHeight * originalAspectRatio.value);
   }
 });
+
+// 初始化 Quill 编辑器
+onMounted(() => {
+  if (editorRef.value) {
+    quill = new Quill(editorRef.value, quillOptions);
+    
+    // 设置初始内容
+    if (props.modelValue) {
+      quill.root.innerHTML = props.modelValue;
+      // 为现有图片添加点击事件
+      setTimeout(() => {
+        addImageClickListeners();
+      }, 100);
+    }
+    
+    // 监听内容变化
+    quill.on('text-change', () => {
+      const html = quill?.root.innerHTML || '';
+      content.value = html;
+      emit('update:modelValue', html);
+      emit('change', html);
+      
+      // 为新增的图片添加点击事件
+      setTimeout(() => {
+        addImageClickListeners();
+      }, 100);
+    });
+  }
+});
+
+// 监听外部内容变化
+watch(() => props.modelValue, (newValue) => {
+  if (quill && newValue !== quill.root.innerHTML) {
+    quill.root.innerHTML = newValue;
+    // 为图片添加点击事件
+    setTimeout(() => {
+      addImageClickListeners();
+    }, 100);
+  }
+});
+
+// 清空内容
+const handleClear = () => {
+  if (quill) {
+    quill.setText('');
+    message.success('内容已清空');
+  }
+};
+
+// 保存内容
+const handleSave = () => {
+  emit('save', content.value);
+  message.success('内容已保存');
+};
+
+// 组件销毁时清理
+onUnmounted(() => {
+  if (quill) {
+    quill = null;
+  }
+});
 </script>
 
 <style scoped>
@@ -444,23 +358,97 @@ watch(imageHeight, (newHeight) => {
   overflow: hidden;
 }
 
-.toolbar {
-  padding: 12px;
-  background: #fafafa;
-  border-bottom: 1px solid #d9d9d9;
-}
-
-.editor-content {
+.quill-editor {
   min-height: v-bind(height);
-  padding: 16px;
-  outline: none;
-  line-height: 1.6;
-  overflow-y: auto;
 }
 
-.editor-content:focus {
-  border-color: #40a9ff;
-  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+:deep(.ql-editor) {
+  min-height: v-bind(height);
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+:deep(.ql-toolbar) {
+  border-bottom: 1px solid #d9d9d9;
+  background: #fafafa;
+}
+
+:deep(.ql-container) {
+  border: none;
+  font-size: 14px;
+}
+
+:deep(.ql-editor h1) {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0.67em 0;
+}
+
+:deep(.ql-editor h2) {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.75em 0;
+}
+
+:deep(.ql-editor h3) {
+  font-size: 1.17em;
+  font-weight: bold;
+  margin: 0.83em 0;
+}
+
+:deep(.ql-editor h4) {
+  font-size: 1em;
+  font-weight: bold;
+  margin: 1.12em 0;
+}
+
+:deep(.ql-editor h5) {
+  font-size: 0.83em;
+  font-weight: bold;
+  margin: 1.5em 0;
+}
+
+:deep(.ql-editor h6) {
+  font-size: 0.67em;
+  font-weight: bold;
+  margin: 2.33em 0;
+}
+
+:deep(.ql-editor p) {
+  margin: 0 0 1em 0;
+}
+
+:deep(.ql-editor ul),
+:deep(.ql-editor ol) {
+  padding-left: 1.5em;
+  margin: 1em 0;
+}
+
+:deep(.ql-editor blockquote) {
+  border-left: 4px solid #ccc;
+  margin: 1em 0;
+  padding-left: 16px;
+  color: #666;
+  font-style: italic;
+}
+
+:deep(.ql-editor img) {
+  max-width: 100%;
+  height: auto;
+  transition: border-color 0.3s;
+}
+
+:deep(.ql-editor img:hover) {
+  border-color: #1890ff !important;
+}
+
+:deep(.ql-editor a) {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+:deep(.ql-editor a:hover) {
+  text-decoration: underline;
 }
 
 .preview-section {
@@ -476,46 +464,18 @@ watch(imageHeight, (newHeight) => {
   line-height: 1.6;
 }
 
-:deep(.editor-content img) {
+.preview-content :deep(img) {
   max-width: 100%;
   height: auto;
 }
 
-:deep(.editor-content a) {
+.preview-content :deep(a) {
   color: #1890ff;
   text-decoration: none;
 }
 
-:deep(.editor-content a:hover) {
+.preview-content :deep(a:hover) {
   text-decoration: underline;
-}
-
-:deep(.editor-content h1) {
-  font-size: 2em;
-  margin: 0.67em 0;
-}
-
-:deep(.editor-content h2) {
-  font-size: 1.5em;
-  margin: 0.75em 0;
-}
-
-:deep(.editor-content h3) {
-  font-size: 1.17em;
-  margin: 0.83em 0;
-}
-
-:deep(.editor-content ul),
-:deep(.editor-content ol) {
-  padding-left: 2em;
-  margin: 1em 0;
-}
-
-:deep(.editor-content blockquote) {
-  border-left: 4px solid #ddd;
-  margin: 1em 0;
-  padding-left: 1em;
-  color: #666;
 }
 
 .image-preview {

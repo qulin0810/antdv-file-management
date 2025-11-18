@@ -61,8 +61,50 @@ ant-vue-management/
 
 ## 快速开始
 
+### 环境要求
+
+- **Node.js**: >= 16.0.0
+- **包管理器**: npm、yarn 或 pnpm
+
 ### 安装依赖
 
+本项目使用以下主要依赖：
+
+#### 核心依赖
+- **Vue 3** - 渐进式 JavaScript 框架
+- **Ant Design Vue** - 企业级 UI 组件库
+- **Vue Router** - 官方路由管理器
+- **Pinia** - Vue 状态管理库
+- **TypeScript** - JavaScript 超集
+- **Vite** - 下一代前端构建工具
+- **UnoCSS** - 即时按需原子 CSS 引擎
+
+#### 其他依赖
+- **@ant-design/icons-vue** - Ant Design 图标库
+- **@vueuse/core** - Vue 组合式工具库
+- **axios** - HTTP 客户端
+- **dayjs** - 轻量级日期处理库
+- **nprogress** - 页面加载进度条
+- **quill** - 富文本编辑器
+- **vue-quill-editor** - Vue 3 富文本编辑器组件
+
+#### 开发依赖
+- **@types/node** - Node.js 类型定义
+- **@unocss/reset** - UnoCSS 重置样式
+- **@unocss/vite** - UnoCSS Vite 插件
+- **@vitejs/plugin-vue** - Vite Vue 插件
+- **@vue/tsconfig** - Vue TypeScript 配置
+- **vue-tsc** - Vue TypeScript 编译器
+
+### 安装步骤
+
+1. **克隆项目**
+```bash
+git clone <项目地址>
+cd ant-vue-management
+```
+
+2. **安装依赖**
 ```bash
 npm install
 # 或
@@ -70,6 +112,18 @@ yarn install
 # 或
 pnpm install
 ```
+
+3. **启动开发服务器**
+```bash
+npm run dev
+# 或
+yarn dev
+# 或
+pnpm dev
+```
+
+4. **访问应用**
+打开浏览器访问 `http://localhost:5173`
 
 ### 开发环境
 
