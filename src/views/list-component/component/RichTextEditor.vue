@@ -4,6 +4,13 @@
       <template #extra>
         <a-space>
           <a-button @click="handleClear">清空</a-button>
+          <a-button
+            :disabled="!selectedImage"
+            :type="selectedImage ? 'primary' : 'default'"
+            @click="showImageSizeModal"
+          >
+            修改图片大小
+          </a-button>
           <a-button type="primary" @click="handleSave">保存</a-button>
         </a-space>
       </template>
@@ -76,6 +83,19 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
+
+// 清理所有删除按钮
+function cleanupDeleteButtons() {
+  if (quill) {
+    const editor = quill.root;
+    const deleteButtons = editor.querySelectorAll('button');
+    deleteButtons.forEach(btn => {
+      if (btn.innerHTML === '×') {
+        btn.remove();
+      }
+    });
+  }
+}
 
 interface Props {
   modelValue?: string;
@@ -167,9 +187,8 @@ function imageHandler() {
 
 // 添加图片点击事件监听
 function addImageClickListeners() {
-  debugger
   if (!quill) return;
-  
+  debugger
   const editor = quill.root;
   const images = editor.querySelectorAll('img');
   
@@ -194,16 +213,17 @@ function handleImageClick(event: Event) {
   // 添加选中样式
   img.style.borderColor = '#1890ff';
   
-  // 显示图片大小调整弹窗
-  showImageSizeModal();
+  // 添加删除按钮
+  addDeleteButton(img);
   
-  // 移除其他图片的选中样式
+  // 移除其他图片的选中样式和删除按钮
   if (quill) {
     const editor = quill.root;
     const allImages = editor.querySelectorAll('img');
     allImages.forEach(otherImg => {
       if (otherImg !== img) {
         otherImg.style.borderColor = 'transparent';
+        removeDeleteButton(otherImg);
       }
     });
   }
@@ -221,6 +241,74 @@ const showImageSizeModal = () => {
   originalAspectRatio.value = selectedImage.value.naturalWidth / selectedImage.value.naturalHeight;
   imageSizeModalVisible.value = true;
 };
+
+// 添加删除按钮
+function addDeleteButton(img: HTMLImageElement) {
+  // 如果已经有删除按钮，先移除
+  removeDeleteButton(img);
+  
+  const deleteBtn = document.createElement('button');
+  deleteBtn.innerHTML = '×';
+  deleteBtn.style.cssText = `
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  `;
+  
+  deleteBtn.onclick = (e) => {
+    e.stopPropagation();
+    deleteImage(img);
+  };
+  
+  // 确保图片有相对定位的父容器
+  if (img.parentElement && img.parentElement.style.position !== 'relative') {
+    img.parentElement.style.position = 'relative';
+  }
+  
+  img.parentElement?.appendChild(deleteBtn);
+}
+
+// 移除删除按钮
+function removeDeleteButton(img: HTMLImageElement) {
+  const deleteBtn = img.parentElement?.querySelector('button');
+  if (deleteBtn) {
+    deleteBtn.remove();
+  }
+}
+
+// 删除图片
+function deleteImage(img: HTMLImageElement) {
+  if (quill) {
+    const editor = quill.root;
+    const imgContainer = img.parentElement;
+    
+    if (imgContainer) {
+      imgContainer.remove();
+      
+      // 更新内容
+      content.value = editor.innerHTML;
+      emit('update:modelValue', content.value);
+      
+      message.success('图片已删除');
+    }
+  }
+  
+  selectedImage.value = null;
+}
+
 
 // 确认图片大小调整
 const confirmImageSize = () => {
@@ -247,10 +335,7 @@ const confirmImageSize = () => {
 // 取消图片大小调整
 const cancelImageSize = () => {
   imageSizeModalVisible.value = false;
-  if (selectedImage.value) {
-    selectedImage.value.style.borderColor = 'transparent';
-  }
-  selectedImage.value = null;
+  // 不清除选中状态，保持图片选中
 };
 
 // 设置预设图片大小
@@ -302,10 +387,25 @@ onMounted(() => {
       emit('update:modelValue', html);
       emit('change', html);
       
+      // 清理删除按钮
+      cleanupDeleteButtons();
+      
       // 为新增的图片添加点击事件
       setTimeout(() => {
         addImageClickListeners();
       }, 100);
+    });
+    
+    // 监听编辑器点击事件，用于取消图片选中
+    quill.root.addEventListener('click', (event) => {
+      if (!(event.target instanceof HTMLImageElement)) {
+        // 点击非图片区域，取消选中
+        if (selectedImage.value) {
+          selectedImage.value.style.borderColor = 'transparent';
+          removeDeleteButton(selectedImage.value);
+          selectedImage.value = null;
+        }
+      }
     });
   }
 });
@@ -314,6 +414,8 @@ onMounted(() => {
 watch(() => props.modelValue, (newValue) => {
   if (quill && newValue !== quill.root.innerHTML) {
     quill.root.innerHTML = newValue;
+    // 清理删除按钮
+    cleanupDeleteButtons();
     // 为图片添加点击事件
     setTimeout(() => {
       addImageClickListeners();
@@ -325,6 +427,8 @@ watch(() => props.modelValue, (newValue) => {
 const handleClear = () => {
   if (quill) {
     quill.setText('');
+    // 清理删除按钮
+    cleanupDeleteButtons();
     message.success('内容已清空');
   }
 };
@@ -337,6 +441,7 @@ const handleSave = () => {
 
 // 组件销毁时清理
 onUnmounted(() => {
+  cleanupDeleteButtons();
   if (quill) {
     quill = null;
   }
