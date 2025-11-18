@@ -238,8 +238,35 @@ function addImageClickListeners() {
       console.log('在addImageClickListeners中获取到File对象:', file);
       // 这里可以处理File对象，比如上传到其他接口等
       handleImageFileInAddImageClickListeners(file, img);
+    } else {
+      console.log('在addImageClickListeners中未找到File对象，图片src:', img.src);
+      // 如果是base64图片，尝试转换并上传
+      if (img.src.startsWith('data:')) {
+        handleBase64Image(img);
+      }
     }
   });
+}
+
+// 处理base64图片
+async function handleBase64Image(img: HTMLImageElement) {
+  try {
+    const base64String = img.src;
+    // 将base64转换为File对象
+    const response = await fetch(base64String);
+    const blob = await response.blob();
+    const file = new File([blob], 'image.png', { type: blob.type });
+    
+    // 保存到Map中
+    imageFileMap.set(base64String, file);
+    
+    console.log('base64图片已转换为File对象:', file);
+    
+    // 处理File对象
+    handleImageFileInAddImageClickListeners(file, img);
+  } catch (error) {
+    console.error('base64图片处理失败:', error);
+  }
 }
 
 // 根据图片元素获取对应的File对象
@@ -251,13 +278,26 @@ function getImageFile(img: HTMLImageElement): File | null {
 // 在addImageClickListeners中处理File对象
 function handleImageFileInAddImageClickListeners(file: File, img: HTMLImageElement) {
   // 这里可以调用其他后端接口，比如上传到不同的URL
-  // 例如：uploadToAnotherEndpoint(file, img);
   console.log('处理图片File:', file.name, file.size, file.type);
   
-  // 示例：可以在这里调用另一个上传接口
-  // uploadToCustomEndpoint(file).then(url => {
-  //   // 处理上传后的逻辑
-  // });
+  // 示例：调用自定义上传接口
+  uploadToCustomEndpoint(file)
+    .then(imageUrl => {
+      // 上传成功后，将图片的src替换为后端返回的URL
+      const originalSrc = img.src;
+      img.src = imageUrl;
+      
+      // 更新Map中的key
+      imageFileMap.set(imageUrl, file);
+      imageFileMap.delete(originalSrc);
+      
+      console.log('图片URL已替换:', originalSrc, '->', imageUrl);
+      message.success('图片已上传到自定义接口');
+    })
+    .catch(error => {
+      console.error('自定义上传失败:', error);
+      message.error('自定义上传失败，请重试');
+    });
 }
 
 // 示例：上传到自定义端点的函数
