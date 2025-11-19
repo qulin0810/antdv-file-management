@@ -40,6 +40,17 @@
           <a-radio value="inactive">禁用</a-radio>
         </a-radio-group>
       </a-form-item>
+
+      <!-- 修改时间 -->
+      <a-form-item label="修改时间" name="modificationTime">
+        <a-date-picker
+          v-model:value="modificationTimeDate"
+          placeholder="请选择修改时间"
+          style="width: 100%"
+          format="YYYY-MM-DD"
+          value-format="YYYY-MM-DD"
+        />
+      </a-form-item>
       
       <!-- 爱好输入区域 -->
       <a-form-item label="爱好">
@@ -92,6 +103,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch, computed } from 'vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
+import dayjs from 'dayjs'
 import type { UserFormData } from '../types'
 import { createEmptyUserFormData } from '../types'
 import RichTextEditor from '@/views/list-component/component/RichTextEditor.vue'
@@ -132,6 +144,27 @@ const hobbies = computed({
   }
 })
 
+// 修改时间的日期对象（用于DatePicker）
+const modificationTimeDate = ref<string | null>(null)
+
+// 监听修改时间的变化，转换为时间戳
+watch(modificationTimeDate, (newDate) => {
+  if (newDate) {
+    localFormData.modificationTime = dayjs(newDate).valueOf()
+  } else {
+    localFormData.modificationTime = undefined
+  }
+})
+
+// 监听localFormData.modificationTime的变化，转换为日期字符串用于回显
+watch(() => localFormData.modificationTime, (newTimestamp) => {
+  if (newTimestamp) {
+    modificationTimeDate.value = dayjs(newTimestamp).format('YYYY-MM-DD')
+  } else {
+    modificationTimeDate.value = null
+  }
+})
+
 const rules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' }
@@ -151,6 +184,9 @@ const rules = {
   ],
   status: [
     { required: true, message: '请选择状态', trigger: 'change' }
+  ],
+  modificationTime: [
+    { required: false, message: '请选择修改时间', trigger: 'change' }
   ]
 }
 
@@ -161,9 +197,16 @@ watch(
       // 当模态框打开时，根据是否是编辑模式来设置表单数据
       if (props.isEdit) {
         Object.assign(localFormData, props.formData)
+        // 设置修改时间的日期显示
+        if (props.formData.modificationTime) {
+          modificationTimeDate.value = dayjs(props.formData.modificationTime).format('YYYY-MM-DD')
+        } else {
+          modificationTimeDate.value = null
+        }
       } else {
         // 新增模式时重置表单数据
         resetLocalFormData()
+        modificationTimeDate.value = null
       }
     }
   },

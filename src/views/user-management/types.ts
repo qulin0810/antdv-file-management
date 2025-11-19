@@ -16,6 +16,7 @@ export interface User {
   job?: number
   pet?: string                 // 喜欢的宠物
   createTime: string
+  modificationTime?: number    // 修改时间（时间戳）
   department?: string
   position?: string
   phone?: string
@@ -45,6 +46,7 @@ export interface UserFormData {
   key?: string
   richTextContent?: string
   hobbies?: string[]           // 爱好数组
+  modificationTime?: number    // 修改时间（时间戳）
 }
 
 export const createEmptyUserFormData = (): UserFormData => ({
@@ -55,5 +57,6 @@ export const createEmptyUserFormData = (): UserFormData => ({
   job: undefined,
   pet: undefined,
   richTextContent: '',
-  hobbies: []                  // 初始化空数组
+  hobbies: [],                 // 初始化空数组
+  modificationTime: undefined  // 初始化修改时间
 })

@@ -87,6 +87,7 @@ const allUserList = ref<User[]>([
     status: 'active',
     submitStatus: SubmitStatus.SUCCESS,
     createTime: '2024-01-15 10:30',
+    modificationTime: 1705311000000, // 2024-01-15 10:30
     department: '技术部',
     position: '系统管理员',
     phone: '13800138001',
@@ -104,6 +105,7 @@ const allUserList = ref<User[]>([
     status: 'active',
     submitStatus: SubmitStatus.FAILED,
     createTime: '2024-01-16 14:20',
+    modificationTime: 1705400400000, // 2024-01-16 14:20
     department: '教学部',
     position: '高级讲师',
     phone: '13800138002',
@@ -121,6 +123,7 @@ const allUserList = ref<User[]>([
     status: 'inactive',
     submitStatus: SubmitStatus.PROCESSING,
     createTime: '2024-01-17 09:15',
+    modificationTime: 1705482900000, // 2024-01-17 09:15
     department: '医疗部',
     position: '主治医师',
     phone: '13800138003',
@@ -138,6 +141,7 @@ const allUserList = ref<User[]>([
     status: 'active',
     submitStatus: SubmitStatus.REUPLOAD,
     createTime: '2024-01-18 16:45',
+    modificationTime: 1705581900000, // 2024-01-18 16:45
     department: '研发部',
     position: '高级工程师',
     phone: '13800138004',
@@ -155,6 +159,7 @@ const allUserList = ref<User[]>([
     status: 'active',
     submitStatus: SubmitStatus.SUCCESS,
     createTime: '2024-01-19 11:30',
+    modificationTime: 1705656600000, // 2024-01-19 11:30
     department: '设计部',
     position: 'UI设计师',
     phone: '13800138005',
@@ -172,6 +177,7 @@ const allUserList = ref<User[]>([
     status: 'active',
     submitStatus: SubmitStatus.FAILED,
     createTime: '2024-01-20 08:45',
+    modificationTime: 1705733100000, // 2024-01-20 08:45
     department: '管理部',
     position: '项目经理',
     phone: '13800138006',
@@ -189,6 +195,7 @@ const allUserList = ref<User[]>([
     status: 'active',
     submitStatus: SubmitStatus.PROCESSING,
     createTime: '2024-01-21 13:20',
+    modificationTime: 1705821600000, // 2024-01-21 13:20
     department: '教学部',
     position: '课程顾问',
     phone: '13800138007',
@@ -206,6 +213,7 @@ const allUserList = ref<User[]>([
     status: 'active',
     submitStatus: SubmitStatus.SUCCESS,
     createTime: '2024-01-22 10:15',
+    modificationTime: 1705904100000, // 2024-01-22 10:15
     department: '医疗部',
     position: '副主任医师',
     phone: '13800138008',
@@ -223,6 +231,7 @@ const allUserList = ref<User[]>([
     status: 'inactive',
     submitStatus: SubmitStatus.REUPLOAD,
     createTime: '2024-01-23 15:30',
+    modificationTime: 1705995000000, // 2024-01-23 15:30
     department: '研发部',
     position: '测试工程师',
     phone: '13800138009',
@@ -240,6 +249,7 @@ const allUserList = ref<User[]>([
     status: 'active',
     submitStatus: SubmitStatus.FAILED,
     createTime: '2024-01-24 11:45',
+    modificationTime: 1706075100000, // 2024-01-24 11:45
     department: '设计部',
     position: '交互设计师',
     phone: '13800138010',
