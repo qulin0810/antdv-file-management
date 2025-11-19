@@ -41,6 +41,41 @@
         </a-radio-group>
       </a-form-item>
       
+      <!-- 爱好输入区域 -->
+      <a-form-item label="爱好">
+        <div class="hobbies-container">
+          <div
+            v-for="(hobby, index) in hobbies"
+            :key="index"
+            class="hobby-item"
+          >
+            <a-input
+              v-model:value="hobbies[index]"
+              :placeholder="`爱好 ${index + 1}`"
+              class="hobby-input"
+            />
+            <a-button
+              type="link"
+              danger
+              @click="removeHobby(index)"
+              class="remove-btn"
+            >
+              删除
+            </a-button>
+          </div>
+          <a-button
+            type="dashed"
+            @click="addHobby"
+            class="add-hobby-btn"
+          >
+            <template #icon>
+              <PlusOutlined />
+            </template>
+            添加爱好
+          </a-button>
+        </div>
+      </a-form-item>
+
       <!-- 富文本编辑器 -->
       <a-form-item label="用户描述" name="richTextContent">
         <RichTextEditor
@@ -55,7 +90,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, computed } from 'vue'
+import { PlusOutlined } from '@ant-design/icons-vue'
 import type { UserFormData } from '../types'
 import { createEmptyUserFormData } from '../types'
 import RichTextEditor from '@/views/list-component/component/RichTextEditor.vue'
@@ -83,7 +119,18 @@ const emit = defineEmits<{
 }>()
 
 const formRef = ref()
-const localFormData = reactive<UserFormData>(createEmptyUserFormData())
+const localFormData = reactive<UserFormData>({
+  ...createEmptyUserFormData(),
+  hobbies: [] // 确保hobbies数组被初始化
+})
+
+// 计算属性确保hobbies数组始终存在
+const hobbies = computed({
+  get: () => localFormData.hobbies || [],
+  set: (value) => {
+    localFormData.hobbies = value
+  }
+})
 
 const rules = {
   username: [
@@ -145,6 +192,14 @@ const handleCancel = () => {
   resetForm()
 }
 
+const addHobby = () => {
+  hobbies.value.push('')
+}
+
+const removeHobby = (index: number) => {
+  hobbies.value.splice(index, 1)
+}
+
 const resetLocalFormData = () => {
   // 方法1: 使用 Object.assign 和工厂函数
   Object.assign(localFormData, createEmptyUserFormData())
@@ -165,6 +220,33 @@ const resetForm = () => {
   resetLocalFormData()
 }
 </script>
+
+<style scoped>
+.hobbies-container {
+  width: 100%;
+}
+
+.hobby-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.hobby-input {
+  flex: 1;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+  padding: 4px 8px;
+}
+
+.add-hobby-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+</style>
 
 <script lang="ts">
 export default {

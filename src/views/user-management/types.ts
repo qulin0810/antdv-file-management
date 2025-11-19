@@ -22,6 +22,7 @@ export interface User {
   address?: string
   remark?: string
   richTextContent?: string     // 富文本内容
+  hobbies?: string[]           // 爱好数组
 }
 
 export interface Pagination {
@@ -43,6 +44,7 @@ export interface UserFormData {
   pet?: string                 // 喜欢的宠物
   key?: string
   richTextContent?: string
+  hobbies?: string[]           // 爱好数组
 }
 
 export const createEmptyUserFormData = (): UserFormData => ({
@@ -52,5 +54,6 @@ export const createEmptyUserFormData = (): UserFormData => ({
   status: '',
   job: undefined,
   pet: undefined,
-  richTextContent: ''
+  richTextContent: '',
+  hobbies: []                  // 初始化空数组
 })
