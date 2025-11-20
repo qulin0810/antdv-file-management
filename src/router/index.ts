@@ -45,6 +45,15 @@ const routes: RouteRecordRaw[] = [
                 },
             },
             {
+                path: "user-upload",
+                name: "UserUpload",
+                component: () => import("@/views/user-upload/index.vue"),
+                meta: {
+                    title: "用户文件上传",
+                    icon: "upload",
+                },
+            },
+            {
                 path: "file-component",
                 name: "FileComponent",
                 meta: {
