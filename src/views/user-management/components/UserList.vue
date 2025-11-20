@@ -7,6 +7,10 @@
           <template #icon><user-add-outlined /></template>
           新增用户
         </a-button>
+        <a-button type="primary" @click="handleExport" :loading="exporting">
+          <template #icon><download-outlined /></template>
+          导出Excel
+        </a-button>
         <a-upload
           name="file"
           :show-upload-list="false"
@@ -96,12 +100,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { UserAddOutlined, UserOutlined, UploadOutlined } from '@ant-design/icons-vue'
+import { UserAddOutlined, UserOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { User, Pagination } from '../types'
 import { SubmitStatus } from '../types'
+import { exportUsersToExcel } from '../../../utils/excel'
 
 const uploading = ref(false)
+const exporting = ref(false)
 
 defineOptions({
   name: 'UserList'
@@ -172,6 +178,17 @@ const columns = [
     dataIndex: 'pet',
     key: 'pet',
     width: 100
+  },
+  {
+    title: '爱好',
+    dataIndex: 'hobbiesDisplay',
+    key: 'hobbies',
+    width: 150,
+    customRender: ({ text }: { text: any[] }) => {
+      if (!text || !Array.isArray(text)) return '-'
+      // 确保每个item都有hobby属性
+      return text.map(item => item?.hobby || item).filter(Boolean).join('、')
+    }
   },
   {
     title: '创建时间',
@@ -373,6 +390,27 @@ const handleUpload = async (options: any) => {
     onError(error)
     message.error('图片上传失败，请重试!')
     console.error('上传失败:', error)
+  }
+}
+
+// 导出Excel处理
+const handleExport = () => {
+  if (!props.userData || props.userData.length === 0) {
+    message.warning('没有数据可导出')
+    return
+  }
+
+  exporting.value = true
+  
+  try {
+    // 使用专门的用户导出函数
+    exportUsersToExcel(props.userData, `用户列表_${new Date().toISOString().split('T')[0]}`)
+    message.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    message.error('导出失败，请重试')
+  } finally {
+    exporting.value = false
   }
 }
 </script>

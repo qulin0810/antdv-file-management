@@ -93,7 +93,12 @@ const allUserList = ref<User[]>([
     phone: '13800138001',
     address: '北京市朝阳区建国门外大街1号',
     remark: '系统管理员，负责系统维护',
-    richTextContent: '<p>系统管理员账户，拥有最高权限。</p><p>负责系统维护和用户管理。</p>'
+    richTextContent: '<p>系统管理员账户，拥有最高权限。</p><p>负责系统维护和用户管理。</p>',
+    hobbies: ['打球', '游泳'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '打球' },
+      { id: 2, hobby: '游泳' }
+    ]
   },
   {
     key: '2',
@@ -111,7 +116,12 @@ const allUserList = ref<User[]>([
     phone: '13800138002',
     address: '上海市浦东新区陆家嘴金融中心',
     remark: '负责前端开发课程教学',
-    richTextContent: '<p>前端开发讲师，擅长Vue.js和React。</p>'
+    richTextContent: '<p>前端开发讲师，擅长Vue.js和React。</p>',
+    hobbies: ['阅读', '写作'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '阅读' },
+      { id: 2, hobby: '写作' }
+    ]
   },
   {
     key: '3',
@@ -129,7 +139,12 @@ const allUserList = ref<User[]>([
     phone: '13800138003',
     address: '广州市天河区珠江新城',
     remark: '内科主治医师，擅长心血管疾病',
-    richTextContent: '<p>心血管内科专家，拥有10年临床经验。</p>'
+    richTextContent: '<p>心血管内科专家，拥有10年临床经验。</p>',
+    hobbies: ['跑步', '健身'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '跑步' },
+      { id: 2, hobby: '健身' }
+    ]
   },
   {
     key: '4',
@@ -147,7 +162,12 @@ const allUserList = ref<User[]>([
     phone: '13800138004',
     address: '深圳市南山区科技园',
     remark: '负责后端系统架构设计',
-    richTextContent: '<p>后端架构师，精通微服务和分布式系统。</p>'
+    richTextContent: '<p>后端架构师，精通微服务和分布式系统。</p>',
+    hobbies: ['编程', '游戏'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '编程' },
+      { id: 2, hobby: '游戏' }
+    ]
   },
   {
     key: '5',
@@ -165,7 +185,12 @@ const allUserList = ref<User[]>([
     phone: '13800138005',
     address: '杭州市西湖区文三路',
     remark: '负责产品界面设计和用户体验优化',
-    richTextContent: '<p>UI/UX设计师，专注于用户体验设计。</p>'
+    richTextContent: '<p>UI/UX设计师，专注于用户体验设计。</p>',
+    hobbies: ['绘画', '摄影'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '绘画' },
+      { id: 2, hobby: '摄影' }
+    ]
   },
   {
     key: '6',
@@ -183,7 +208,12 @@ const allUserList = ref<User[]>([
     phone: '13800138006',
     address: '成都市武侯区天府软件园',
     remark: '负责项目管理与团队协调',
-    richTextContent: '<p>项目经理，擅长敏捷开发和团队管理。</p>'
+    richTextContent: '<p>项目经理，擅长敏捷开发和团队管理。</p>',
+    hobbies: ['登山', '旅行'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '登山' },
+      { id: 2, hobby: '旅行' }
+    ]
   },
   {
     key: '7',
@@ -201,7 +231,12 @@ const allUserList = ref<User[]>([
     phone: '13800138007',
     address: '南京市鼓楼区新街口',
     remark: '负责课程咨询和学员服务',
-    richTextContent: '<p>课程顾问，提供专业的学习建议。</p>'
+    richTextContent: '<p>课程顾问，提供专业的学习建议。</p>',
+    hobbies: ['音乐', '电影'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '音乐' },
+      { id: 2, hobby: '电影' }
+    ]
   },
   {
     key: '8',
@@ -219,7 +254,12 @@ const allUserList = ref<User[]>([
     phone: '13800138008',
     address: '武汉市武昌区光谷',
     remark: '外科副主任医师，擅长微创手术',
-    richTextContent: '<p>外科专家，精通微创手术技术。</p>'
+    richTextContent: '<p>外科专家，精通微创手术技术。</p>',
+    hobbies: ['瑜伽', '冥想'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '瑜伽' },
+      { id: 2, hobby: '冥想' }
+    ]
   },
   {
     key: '9',
@@ -237,7 +277,12 @@ const allUserList = ref<User[]>([
     phone: '13800138009',
     address: '西安市雁塔区高新区',
     remark: '负责软件测试和质量保证',
-    richTextContent: '<p>测试工程师，专注于自动化测试。</p>'
+    richTextContent: '<p>测试工程师，专注于自动化测试。</p>',
+    hobbies: ['阅读', '下棋'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '阅读' },
+      { id: 2, hobby: '下棋' }
+    ]
   },
   {
     key: '10',
@@ -255,7 +300,12 @@ const allUserList = ref<User[]>([
     phone: '13800138010',
     address: '重庆市渝北区光电园',
     remark: '负责产品交互设计和原型制作',
-    richTextContent: '<p>交互设计师，专注于用户体验研究。</p>'
+    richTextContent: '<p>交互设计师，专注于用户体验研究。</p>',
+    hobbies: ['设计', '手工'],
+    hobbiesDisplay: [
+      { id: 1, hobby: '设计' },
+      { id: 2, hobby: '手工' }
+    ]
   }
 ])
 

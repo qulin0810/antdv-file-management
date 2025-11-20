@@ -23,7 +23,14 @@ export interface User {
   address?: string
   remark?: string
   richTextContent?: string     // 富文本内容
-  hobbies?: string[]           // 爱好数组
+  hobbies?: string[]           // 爱好数组（创建/提交格式）
+  hobbiesDisplay?: HobbyItem[] // 爱好显示格式（回显格式）
+}
+
+// 爱好显示项接口
+export interface HobbyItem {
+  id: number
+  hobby: string
 }
 
 export interface Pagination {
@@ -45,7 +52,8 @@ export interface UserFormData {
   pet?: string                 // 喜欢的宠物
   key?: string
   richTextContent?: string
-  hobbies?: string[]           // 爱好数组
+  hobbies?: string[]           // 爱好数组（创建/提交格式）
+  hobbiesDisplay?: HobbyItem[] // 爱好显示格式（回显格式）
   modificationTime?: number    // 修改时间（时间戳）
 }
 

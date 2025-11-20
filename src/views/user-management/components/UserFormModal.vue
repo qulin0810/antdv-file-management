@@ -104,7 +104,7 @@
 import { reactive, ref, watch, computed } from 'vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
-import type { UserFormData } from '../types'
+import type { UserFormData, HobbyItem } from '../types'
 import { createEmptyUserFormData } from '../types'
 import RichTextEditor from '@/views/list-component/component/RichTextEditor.vue'
 
@@ -138,7 +138,17 @@ const localFormData = reactive<UserFormData>({
 
 // 计算属性确保hobbies数组始终存在
 const hobbies = computed({
-  get: () => localFormData.hobbies || [],
+  get: () => {
+    // 优先使用hobbies数组，如果没有则从hobbiesDisplay转换
+    if (localFormData.hobbies && localFormData.hobbies.length > 0) {
+      return localFormData.hobbies
+    }
+    // 如果hobbies为空但有hobbiesDisplay，转换为字符串数组
+    if (localFormData.hobbiesDisplay && localFormData.hobbiesDisplay.length > 0) {
+      return localFormData.hobbiesDisplay.map(item => item.hobby)
+    }
+    return []
+  },
   set: (value) => {
     localFormData.hobbies = value
   }
@@ -190,6 +200,21 @@ const rules = {
   ]
 }
 
+// 将爱好显示格式转换为提交格式
+const convertHobbiesDisplayToSubmit = (hobbiesDisplay: HobbyItem[]): string[] => {
+  if (!hobbiesDisplay || !Array.isArray(hobbiesDisplay)) return []
+  return hobbiesDisplay.map(item => item.hobby).filter(Boolean)
+}
+
+// 将爱好提交格式转换为显示格式
+const convertHobbiesSubmitToDisplay = (hobbies: string[]): HobbyItem[] => {
+  if (!hobbies || !Array.isArray(hobbies)) return []
+  return hobbies.filter(Boolean).map((hobby, index) => ({
+    id: index + 1,
+    hobby: hobby
+  }))
+}
+
 watch(
   () => props.visible,
   (newVal) => {
@@ -197,6 +222,10 @@ watch(
       // 当模态框打开时，根据是否是编辑模式来设置表单数据
       if (props.isEdit) {
         Object.assign(localFormData, props.formData)
+        // 确保爱好数据正确设置
+        if (props.formData.hobbiesDisplay && props.formData.hobbiesDisplay.length > 0) {
+          localFormData.hobbies = props.formData.hobbiesDisplay.map(item => item.hobby)
+        }
         // 设置修改时间的日期显示
         if (props.formData.modificationTime) {
           modificationTimeDate.value = dayjs(props.formData.modificationTime).format('YYYY-MM-DD')
@@ -216,7 +245,18 @@ watch(
 const handleOk = async () => {
   try {
     await formRef.value.validate()
-    emit('ok', { ...localFormData }, props.isEdit)
+    
+    // 准备提交的数据
+    const submitData = { ...localFormData }
+    
+    // 确保提交时hobbiesDisplay格式正确
+    if (submitData.hobbies && submitData.hobbies.length > 0) {
+      submitData.hobbiesDisplay = convertHobbiesSubmitToDisplay(submitData.hobbies)
+    } else {
+      submitData.hobbiesDisplay = []
+    }
+    
+    emit('ok', submitData, props.isEdit)
     emit('update:visible', false)
   } catch (error) {
     console.log('表单验证失败:', error)
@@ -244,14 +284,11 @@ const removeHobby = (index: number) => {
 }
 
 const resetLocalFormData = () => {
-  // 方法1: 使用 Object.assign 和工厂函数
-  Object.assign(localFormData, createEmptyUserFormData())
-  
-  // 方法2: 也可以使用解构赋值
-  // const emptyForm = createEmptyUserFormData()
-  // Object.keys(emptyForm).forEach(key => {
-  //   localFormData[key as keyof UserFormData] = emptyForm[key as keyof UserFormData]
-  // })
+  // 使用 Object.assign 和工厂函数重置表单数据
+  const emptyForm = createEmptyUserFormData()
+  Object.assign(localFormData, emptyForm)
+  // 确保hobbies数组被正确重置
+  localFormData.hobbies = []
 }
 
 const resetForm = () => {
