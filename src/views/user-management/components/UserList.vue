@@ -7,24 +7,25 @@
           <template #icon><user-add-outlined /></template>
           新增用户
         </a-button>
-        <a-button type="primary" @click="handleExport" :loading="exporting">
+        <a-button type="primary" @click="handleDownload">
           <template #icon><download-outlined /></template>
-          导出Excel
+          下载文件
         </a-button>
-        <a-upload
-          name="file"
-          :show-upload-list="false"
-          :before-upload="beforeUpload"
-          :custom-request="handleUpload"
-          accept="image/*"
-        >
-          <a-button type="primary" :loading="uploading">
-            <template #icon><upload-outlined /></template>
-            上传图片
-          </a-button>
-        </a-upload>
+        <a-button type="primary" @click="handleUpload">
+          <template #icon><upload-outlined /></template>
+          上传文件
+        </a-button>
       </a-space>
     </div>
+
+    <!-- 文件操作模态框 -->
+    <UserFileModal
+      v-model:visible="fileModalVisible"
+      :mode="fileModalMode"
+      :user-list="userData"
+      @upload="handleFileUpload"
+      @download="handleFileDownload"
+    />
 
     <!-- 用户列表 -->
     <a-table
@@ -104,10 +105,12 @@ import { UserAddOutlined, UserOutlined, UploadOutlined, DownloadOutlined } from 
 import { message } from 'ant-design-vue'
 import type { User, Pagination } from '../types'
 import { SubmitStatus } from '../types'
-import { exportUsersToExcel } from '../../../utils/excel'
+import UserFileModal from '../../../components/UserFileModal.vue'
+import { mockFileDownload } from '../../../utils/fileDownload'
 
 const uploading = ref(false)
-const exporting = ref(false)
+const fileModalVisible = ref(false)
+const fileModalMode = ref<'upload' | 'download'>('upload')
 
 defineOptions({
   name: 'UserList'
@@ -322,95 +325,96 @@ const handleTableChange = (pag: any, filters: any, sorter: any, extra: any) => {
   emit('table-change', pag, filters, sorter, extra)
 }
 
-// 上传前验证
-const beforeUpload = (file: File) => {
-  const isImage = file.type.startsWith('image/')
-  if (!isImage) {
-    message.error('只能上传图片文件!')
-    return false
-  }
-  
-  const isLt2M = file.size / 1024 / 1024 < 2
-  if (!isLt2M) {
-    message.error('图片大小不能超过 2MB!')
-    return false
-  }
-  
-  return true
+// 文件上传处理
+const handleUpload = () => {
+  fileModalMode.value = 'upload'
+  fileModalVisible.value = true
 }
 
-// 自定义上传处理
-const handleUpload = async (options: any) => {
-  const { file, onSuccess, onError, onProgress } = options
-  
+// 文件下载处理
+const handleDownload = () => {
+  fileModalMode.value = 'download'
+  fileModalVisible.value = true
+}
+
+// 处理文件上传
+const handleFileUpload = async (data: { username: string; file: File; description: string }) => {
   uploading.value = true
   
   try {
     // 创建FormData
     const formData = new FormData()
-    formData.append('file', file)
-    
-    // 模拟上传进度
-    let progress = 0
-    const progressInterval = setInterval(() => {
-      progress += 10
-      if (progress <= 100) {
-        onProgress({ percent: progress })
-      } else {
-        clearInterval(progressInterval)
-      }
-    }, 100)
+    formData.append('file', data.file)
+    formData.append('username', data.username)
+    formData.append('description', data.description)
     
     // 调用后端上传接口
-    const response = await fetch('/api/upload/image', {
+    const response = await fetch('/api/upload/file', {
       method: 'POST',
       body: formData,
     })
-    
-    clearInterval(progressInterval)
     
     if (!response.ok) {
       throw new Error(`上传失败: ${response.status} ${response.statusText}`)
     }
     
     const result = await response.json()
-    
-    // 模拟成功回调
-    setTimeout(() => {
-      onSuccess(result, file)
-      message.success('图片上传成功!')
-      uploading.value = false
-      
-      // 这里可以处理上传成功后的逻辑，比如更新用户头像等
-      console.log('上传成功:', result)
-    }, 500)
+    message.success('文件上传成功!')
+    console.log('上传成功:', result)
     
   } catch (error) {
-    uploading.value = false
-    onError(error)
-    message.error('图片上传失败，请重试!')
     console.error('上传失败:', error)
+    message.error('文件上传失败，请重试!')
+  } finally {
+    uploading.value = false
   }
 }
 
-// 导出Excel处理
-const handleExport = () => {
-  if (!props.userData || props.userData.length === 0) {
-    message.warning('没有数据可导出')
-    return
-  }
-
-  exporting.value = true
-  
+// 处理文件下载
+const handleFileDownload = async (data: { username: string; fileId: string }) => {
   try {
-    // 使用专门的用户导出函数
-    exportUsersToExcel(props.userData, `用户列表_${new Date().toISOString().split('T')[0]}`)
-    message.success('导出成功')
+    // 根据文件ID模拟获取文件信息
+    const fileMap: Record<string, { name: string; type: string; content: string }> = {
+      '1': {
+        name: `${data.username}_项目文档`,
+        type: 'document',
+        content: `项目文档内容\n用户: ${data.username}\n下载时间: ${new Date().toLocaleString()}\n\n这是项目相关的文档内容。`
+      },
+      '2': {
+        name: `${data.username}_用户数据`,
+        type: 'excel',
+        content: `用户名,邮箱,角色,状态\n${data.username},${data.username}@example.com,user,active\n`
+      },
+      '3': {
+        name: `${data.username}_产品图片`,
+        type: 'image',
+        content: `图片描述: 这是用户 ${data.username} 的产品图片\n下载时间: ${new Date().toLocaleString()}`
+      },
+      '4': {
+        name: `${data.username}_会议记录`,
+        type: 'pdf',
+        content: `会议记录\n用户: ${data.username}\n会议时间: 2024-01-18\n下载时间: ${new Date().toLocaleString()}\n\n会议内容摘要...`
+      }
+    }
+    
+    const fileInfo = fileMap[data.fileId] || {
+      name: `${data.username}_文件`,
+      type: 'text',
+      content: `这是用户 ${data.username} 的文件内容\n下载时间: ${new Date().toLocaleString()}`
+    }
+    
+    // 使用文件下载工具下载文件
+    mockFileDownload({
+      id: data.fileId,
+      name: fileInfo.name,
+      type: fileInfo.type,
+      content: fileInfo.content
+    })
+    message.success('文件下载成功!')
+    
   } catch (error) {
-    console.error('导出失败:', error)
-    message.error('导出失败，请重试')
-  } finally {
-    exporting.value = false
+    console.error('下载失败:', error)
+    message.error('文件下载失败，请重试!')
   }
 }
 </script>
