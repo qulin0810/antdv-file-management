@@ -54,6 +54,15 @@ const routes: RouteRecordRaw[] = [
                 },
             },
             {
+                path: "excel-upload",
+                name: "ExcelUpload",
+                component: () => import("@/views/excel-upload/index.vue"),
+                meta: {
+                    title: "Excel文件上传",
+                    icon: "file-excel",
+                },
+            },
+            {
                 path: "file-component",
                 name: "FileComponent",
                 meta: {
