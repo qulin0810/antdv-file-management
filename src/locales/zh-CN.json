@@ -1,0 +1,31 @@
+{
+  "common": {
+    "home": "首页",
+    "unknownPage": "未知页面",
+    "admin": "管理员",
+    "profile": "个人中心",
+    "settings": "设置",
+    "logout": "退出登录",
+    "fileManagementSystem": "文件管理系统",
+    "management": "管理"
+  },
+  "menu": {
+    "dashboard": "仪表板",
+    "fileManagement": "文件管理",
+    "userManagement": "用户管理",
+    "testManagement": "测试管理",
+    "userUpload": "用户文件上传",
+    "excelUpload": "Excel文件上传",
+    "componentManagement": "组件list管理",
+    "componentList": "组件列表",
+    "basicTableDemo": "基础表格演示",
+    "switchDemo": "Switch演示",
+    "formModalDemo": "表单弹窗演示",
+    "richTextEditorDemo": "富文本编辑器演示"
+  },
+  "language": {
+    "chinese": "中文",
+    "english": "English",
+    "switchLanguage": "切换语言"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "common": {
+    "home": "Home",
+    "unknownPage": "Unknown Page",
+    "admin": "Administrator",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout",
+    "fileManagementSystem": "File Management System",
+    "management": "Management"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "fileManagement": "File Management",
+    "userManagement": "User Management",
+    "testManagement": "Test Management",
+    "userUpload": "User File Upload",
+    "excelUpload": "Excel File Upload",
+    "componentManagement": "Component List Management",
+    "componentList": "Component List",
+    "basicTableDemo": "Basic Table Demo",
+    "switchDemo": "Switch Demo",
+    "formModalDemo": "Form Modal Demo",
+    "richTextEditorDemo": "Rich Text Editor Demo"
+  },
+  "language": {
+    "chinese": "中文",
+    "english": "English",
+    "switchLanguage": "Switch Language"
+  }
+}

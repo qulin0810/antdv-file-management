@@ -14,31 +14,33 @@
           @click="() => (collapsed = !collapsed)"
         />
         <a-breadcrumb>
-          <a-breadcrumb-item>首页</a-breadcrumb-item>
+          <a-breadcrumb-item>{{ t('common.home') }}</a-breadcrumb-item>
           <a-breadcrumb-item>{{ currentRouteTitle }}</a-breadcrumb-item>
         </a-breadcrumb>
       </div>
       <div class="flex items-center gap-4">
+        <!-- 语言切换器 -->
+        <LanguageSwitcher />
         <a-dropdown>
           <a class="ant-dropdown-link" @click.prevent>
             <user-outlined class="mr-1" />
-            {{ authStore.userInfo?.username || '管理员' }}
+            {{ authStore.userInfo?.username || t('common.admin') }}
             <down-outlined />
           </a>
           <template #overlay>
             <a-menu>
               <a-menu-item>
                 <user-outlined />
-                个人中心
+                {{ t('common.profile') }}
               </a-menu-item>
               <a-menu-item>
                 <setting-outlined />
-                设置
+                {{ t('common.settings') }}
               </a-menu-item>
               <a-menu-divider />
               <a-menu-item @click="handleLogout">
                 <logout-outlined />
-                退出登录
+                {{ t('common.logout') }}
               </a-menu-item>
             </a-menu>
           </template>
@@ -57,8 +59,8 @@
         style="background-color: #ffffff;"
       >
         <div class="logo" style="background-color: #00857c;">
-          <h2 v-if="!collapsed" class="text-white text-center">文件管理系统</h2>
-          <h2 v-else class="text-white text-center">管理</h2>
+          <h2 v-if="!collapsed" class="text-white text-center">{{ t('common.fileManagementSystem') }}</h2>
+          <h2 v-else class="text-white text-center">{{ t('common.management') }}</h2>
         </div>
         <a-menu
           v-model:selectedKeys="selectedKeys"
@@ -83,6 +85,7 @@
 <script setup lang="ts">
 import { ref, computed, h, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -94,10 +97,12 @@ import {
   FolderOutlined
 } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 const collapsed = ref(false)
 const selectedKeys = ref<string[]>([route.name as string])
 
@@ -129,10 +134,29 @@ const menuItems = computed(() => {
       const iconName = child.meta?.icon as string
       const iconComponent = iconMap[iconName] || UserOutlined
       
+      // 根据路由名称获取翻译的标题
+      const getTranslatedTitle = (routeName: string): string => {
+        const translationMap: Record<string, string> = {
+          'Dashboard': t('menu.dashboard'),
+          'FileManagement': t('menu.fileManagement'),
+          'UserManagement': t('menu.userManagement'),
+          'TestManagement': t('menu.testManagement'),
+          'UserUpload': t('menu.userUpload'),
+          'ExcelUpload': t('menu.excelUpload'),
+          'FileComponent': t('menu.componentManagement'),
+          'ComponentOverview': t('menu.componentList'),
+          'BasicTableDemo': t('menu.basicTableDemo'),
+          'SwitchDemo': t('menu.switchDemo'),
+          'FormModalDemo': t('menu.formModalDemo'),
+          'RichTextEditorDemo': t('menu.richTextEditorDemo')
+        }
+        return translationMap[routeName] || child.meta?.title as string
+      }
+
       const menuItem: any = {
         key: child.name as string,
         icon: () => h(iconComponent),
-        label: child.meta?.title as string
+        label: getTranslatedTitle(child.name as string)
       }
 
       // 处理子路由
@@ -141,7 +165,7 @@ const menuItems = computed(() => {
           .filter(subChild => subChild.meta?.title)
           .map(subChild => ({
             key: subChild.name as string,
-            label: subChild.meta?.title as string
+            label: getTranslatedTitle(subChild.name as string)
           }))
       }
 
@@ -165,7 +189,7 @@ const currentRouteTitle = computed(() => {
   }
   
   const currentMenuItem = findMenuItem(menuItems.value, route.name as string)
-  return currentMenuItem?.label || '未知页面'
+  return currentMenuItem?.label || t('common.unknownPage')
 })
 
 const handleMenuClick = ({ key }: { key: string }) => {

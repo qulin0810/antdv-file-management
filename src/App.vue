@@ -1,16 +1,36 @@
 <template>
-  <a-config-provider :locale="zhCN" :theme="theme">
+  <a-config-provider :locale="antdLocale" :theme="theme">
     <router-view />
   </a-config-provider>
 </template>
 
 <script setup lang="ts">
+import { computed, watch } from 'vue'
+import { useLanguageStore } from '@/stores/language'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import enUS from 'ant-design-vue/es/locale/en_US'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
+import 'dayjs/locale/en'
 import type { ThemeConfig } from 'ant-design-vue/es/config-provider/context'
 
-dayjs.locale('zh-cn')
+const languageStore = useLanguageStore()
+
+// 动态 Ant Design locale
+const antdLocale = computed(() => {
+  const locale = languageStore.getAntdLocaleConfig()
+  return locale === 'zh_CN' ? zhCN : enUS
+})
+
+// 动态 Day.js locale
+watch(
+  () => languageStore.currentLocale,
+  (newLocale) => {
+    const dayjsLocale = newLocale === 'zh-CN' ? 'zh-cn' : 'en'
+    dayjs.locale(dayjsLocale)
+  },
+  { immediate: true }
+)
 
 const theme: ThemeConfig = {
   token: {
