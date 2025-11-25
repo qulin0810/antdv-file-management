@@ -67,9 +67,6 @@
               <a-button @click="handlePreview" :disabled="!selectedContent">
                 预览
               </a-button>
-              <a-button type="primary" @click="handleSave" :loading="saving">
-                保存
-              </a-button>
             </a-space>
           </template>
 
@@ -103,6 +100,7 @@
                 height="400px"
                 :show-preview="false"
                 @save="handleSave"
+                @blur="handleAutoSave"
               />
             </a-form-item>
 
@@ -180,6 +178,30 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons-vue';
 import RichTextEditor from '../component/RichTextEditor.vue';
+
+// 注册 Ant Design Vue 组件
+const components = {
+  APageHeader: {},
+  ASpace: {},
+  AButton: {},
+  ARow: {},
+  ACol: {},
+  ACard: {},
+  AInputSearch: {},
+  AList: {},
+  AListItem: {},
+  AListItemMeta: {},
+  ATooltip: {},
+  AForm: {},
+  AFormItem: {},
+  AInput: {},
+  ATextarea: {},
+  ASelect: {},
+  AEmpty: {},
+  AModal: {},
+  ATag: {},
+  ADivider: {},
+};
 
 interface ContentItem {
   id: string;
@@ -376,6 +398,46 @@ const handleSave = async () => {
     console.error('保存失败:', error);
   } finally {
     saving.value = false;
+  }
+};
+
+// 自动保存处理
+const handleAutoSave = async (content: string) => {
+  if (!selectedContent.value) {
+    return;
+  }
+
+  try {
+    // 验证表单
+    await formRef.value?.validate();
+    
+    // 更新内容
+    formState.content = content;
+    
+    const contentIndex = contents.value.findIndex(item => item.id === selectedContent.value!.id);
+    const updatedContent: ContentItem = {
+      ...selectedContent.value,
+      title: formState.title,
+      description: formState.description,
+      content: formState.content,
+      tags: formState.tags,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    if (contentIndex === -1) {
+      // 新增内容
+      contents.value.unshift(updatedContent);
+      message.success('内容已自动保存');
+    } else {
+      // 更新内容
+      contents.value[contentIndex] = updatedContent;
+      message.success('内容已自动保存');
+    }
+    
+    selectedContent.value = updatedContent;
+    
+  } catch (error) {
+    console.error('自动保存失败:', error);
   }
 };
 

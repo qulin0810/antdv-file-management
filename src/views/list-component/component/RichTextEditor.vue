@@ -4,7 +4,6 @@
       <template #extra>
         <a-space>
           <a-button @click="handleClear">清空</a-button>
-          <a-button type="primary" @click="handleSave">保存</a-button>
         </a-space>
       </template>
       
@@ -108,6 +107,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string];
   'save': [content: string];
   'change': [content: string];
+  'blur': [content: string];
 }>();
 
 const editorRef = ref<HTMLElement>();
@@ -529,6 +529,9 @@ onMounted(() => {
     setTimeout(() => {
       addImageSizeButtonToToolbar();
     }, 100);
+
+    // 添加编辑器失焦事件监听
+    quill.root.addEventListener('blur', handleEditorBlur);
   }
 });
 
@@ -617,9 +620,14 @@ watch(() => props.modelValue, (newValue) => {
 // 清空内容
 const handleClear = () => {
   if (quill) {
-    quill.setText('');
+    // 完全清空编辑器内容，包括格式
+    quill.root.innerHTML = '';
     // 清理删除按钮
     cleanupDeleteButtons();
+    // 更新内容状态
+    content.value = '';
+    emit('update:modelValue', '');
+    emit('change', '');
     message.success('内容已清空');
   }
 };
@@ -630,10 +638,19 @@ const handleSave = () => {
   message.success('内容已保存');
 };
 
+// 处理编辑器失焦
+const handleEditorBlur = () => {
+  if (content.value && content.value !== props.modelValue) {
+    emit('blur', content.value);
+    message.success('内容已自动保存');
+  }
+};
+
 // 组件销毁时清理
 onUnmounted(() => {
   cleanupDeleteButtons();
   if (quill) {
+    quill.root.removeEventListener('blur', handleEditorBlur);
     quill = null;
   }
 });

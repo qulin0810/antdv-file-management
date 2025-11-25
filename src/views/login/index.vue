@@ -60,8 +60,10 @@ import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import type { FormInstance } from 'ant-design-vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
@@ -84,18 +86,16 @@ const handleLogin = async () => {
     await loginFormRef.value?.validate()
     loading.value = true
 
-    // 模拟登录请求
-    setTimeout(() => {
-      if (loginForm.username === 'admin' && loginForm.password === '123456') {
-        message.success('登录成功')
-        router.push('/')
-      } else {
-        message.error('用户名或密码错误')
-      }
-      loading.value = false
-    }, 1000)
+    const success = await authStore.login(loginForm.username, loginForm.password)
+    
+    if (success) {
+      router.push('/')
+    }
+    
+    loading.value = false
   } catch (error) {
     console.log('表单验证失败:', error)
+    loading.value = false
   }
 }
 </script>

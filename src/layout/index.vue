@@ -22,7 +22,7 @@
         <a-dropdown>
           <a class="ant-dropdown-link" @click.prevent>
             <user-outlined class="mr-1" />
-            管理员
+            {{ authStore.userInfo?.username || '管理员' }}
             <down-outlined />
           </a>
           <template #overlay>
@@ -36,7 +36,7 @@
                 设置
               </a-menu-item>
               <a-menu-divider />
-              <a-menu-item>
+              <a-menu-item @click="handleLogout">
                 <logout-outlined />
                 退出登录
               </a-menu-item>
@@ -93,9 +93,11 @@ import {
   DashboardOutlined,
   FolderOutlined
 } from '@ant-design/icons-vue'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const collapsed = ref(false)
 const selectedKeys = ref<string[]>([route.name as string])
 
@@ -168,6 +170,10 @@ const currentRouteTitle = computed(() => {
 
 const handleMenuClick = ({ key }: { key: string }) => {
   router.push({ name: key })
+}
+
+const handleLogout = () => {
+  authStore.logout()
 }
 </script>
 
