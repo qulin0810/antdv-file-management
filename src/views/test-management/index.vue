@@ -93,7 +93,10 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { message, Modal } from 'ant-design-vue';
+import { useI18n } from 'vue-i18n';
 import Pagination from '../../components/Pagination.vue';
+
+const { t } = useI18n();
 
 // 响应式数据
 const loading = ref(false);
@@ -254,17 +257,17 @@ const handlePageChange = (pageInfo) => {
 // 删除功能
 const handleDelete = (record) => {
   Modal.confirm({
-    title: '确认删除',
-    content: `确定要删除用户"${record.name}"吗？此操作不可恢复。`,
-    okText: '确认',
-    cancelText: '取消',
+    title: t('userManagement.confirmDeleteWithName', { username: record.name }),
+    content: t('userManagement.deleteWarning'),
+    okText: t('common.confirm'),
+    cancelText: t('common.cancel'),
     onOk() {
       // 在实际项目中这里应该是调用删除API
       const index = mockData.findIndex(item => item.id === record.id);
       if (index !== -1) {
         mockData.splice(index, 1);
         fetchData(); // 重新加载数据
-        message.success('删除成功');
+        message.success(t('userManagement.deleteSuccess'));
       }
     },
   });

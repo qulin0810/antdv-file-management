@@ -85,7 +85,7 @@
             </template>
             
             <a-popconfirm
-              :title="t('userManagement.confirmDelete')"
+              :title="t('userManagement.confirmDeleteWithName', { username: record.username })"
               @confirm="handleDelete(record)"
             >
               <a-button type="link" size="small" danger>

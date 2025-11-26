@@ -11,7 +11,9 @@
     "search": "Search",
     "reset": "Reset",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   },
   "menu": {
     "dashboard": "Dashboard",
@@ -52,6 +54,9 @@
     "retry": "Retry",
     "reupload": "Reupload",
     "confirmDelete": "Are you sure to delete this user?",
+    "confirmDeleteWithName": "Are you sure to delete user {username}?",
+    "deleteWarning": "This operation cannot be undone.",
+    "deleteSuccess": "Delete successful",
     "enable": "Enable",
     "disable": "Disable",
     "success": "Success",
@@ -91,6 +96,16 @@
     "fileDownloadSuccess": "File download successful!",
     "fileDownloadFailed": "File download failed, please try again!",
     "cat": "Cat",
-    "dog": "Dog"
+    "dog": "Dog",
+    "welcomeMessage": "Welcome {name}, today is {date}",
+    "userInfo": "User: {username} | Role: {role} | Status: {status}",
+    "searchResults": "Found {count} results for '{keyword}'",
+    "paginationInfo": "Showing {start} to {end} of {total} items",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "fullName": "{firstName} {lastName}",
+    "part1": "Hello",
+    "part2": "World",
+    "combinedMessage": "{part1} {part2}"
   }
 }
