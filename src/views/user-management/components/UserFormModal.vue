@@ -1,7 +1,7 @@
 <template>
   <a-modal
     :open="visible"
-    :title="isEdit ? '编辑用户' : '新增用户'"
+    :title="isEdit ? t('userManagement.editUser') : t('userManagement.addUser')"
     width="800px"
     @ok="handleOk"
     @cancel="handleCancel"
@@ -12,40 +12,40 @@
       :rules="rules"
       layout="vertical"
     >
-      <a-form-item label="用户名" name="username">
-        <a-input v-model:value="localFormData.username" placeholder="请输入用户名" />
+      <a-form-item :label="t('userManagement.username')" name="username">
+        <a-input v-model:value="localFormData.username" :placeholder="t('userManagement.enterUsername')" />
       </a-form-item>
-      <a-form-item label="邮箱" name="email">
-        <a-input v-model:value="localFormData.email" placeholder="请输入邮箱" />
+      <a-form-item :label="t('userManagement.email')" name="email">
+        <a-input v-model:value="localFormData.email" :placeholder="t('userManagement.enterEmail')" />
       </a-form-item>
-      <a-form-item label="角色" name="role">
-        <a-select v-model:value="localFormData.role" placeholder="请选择角色">
-          <a-select-option value="admin">管理员</a-select-option>
-          <a-select-option value="user">普通用户</a-select-option>
-          <a-select-option value="guest">访客</a-select-option>
+      <a-form-item :label="t('userManagement.role')" name="role">
+        <a-select v-model:value="localFormData.role" :placeholder="t('userManagement.selectRole')">
+          <a-select-option value="admin">{{ t('userManagement.admin') }}</a-select-option>
+          <a-select-option value="user">{{ t('userManagement.user') }}</a-select-option>
+          <a-select-option value="guest">{{ t('userManagement.guest') }}</a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item label="职业" name="job">
-        <a-select v-model:value="localFormData.job" placeholder="请选择职业" :options="props.jobOptions" />
+      <a-form-item :label="t('userManagement.job')" name="job">
+        <a-select v-model:value="localFormData.job" :placeholder="t('userManagement.selectJob')" :options="props.jobOptions" />
       </a-form-item>
-      <a-form-item label="喜欢的宠物" name="pet">
-        <a-select v-model:value="localFormData.pet" placeholder="请选择宠物">
-          <a-select-option value="小猫">小猫</a-select-option>
-          <a-select-option value="小狗">小狗</a-select-option>
+      <a-form-item :label="t('userManagement.pet')" name="pet">
+        <a-select v-model:value="localFormData.pet" :placeholder="t('userManagement.selectPet')">
+          <a-select-option value="小猫">{{ t('userManagement.cat') }}</a-select-option>
+          <a-select-option value="小狗">{{ t('userManagement.dog') }}</a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item label="状态" name="status">
+      <a-form-item :label="t('userManagement.status')" name="status">
         <a-radio-group v-model:value="localFormData.status">
-          <a-radio value="active">启用</a-radio>
-          <a-radio value="inactive">禁用</a-radio>
+          <a-radio value="active">{{ t('userManagement.active') }}</a-radio>
+          <a-radio value="inactive">{{ t('userManagement.inactive') }}</a-radio>
         </a-radio-group>
       </a-form-item>
 
       <!-- 修改时间 -->
-      <a-form-item label="修改时间" name="modificationTime">
+      <a-form-item :label="t('userManagement.modificationTime')" name="modificationTime">
         <a-date-picker
           v-model:value="modificationTimeDate"
-          placeholder="请选择修改时间"
+          :placeholder="t('userManagement.selectModificationTime')"
           style="width: 100%"
           format="YYYY-MM-DD"
           value-format="YYYY-MM-DD"
@@ -53,7 +53,7 @@
       </a-form-item>
       
       <!-- 爱好输入区域 -->
-      <a-form-item label="爱好">
+      <a-form-item :label="t('userManagement.hobbies')">
         <div class="hobbies-container">
           <div
             v-for="(hobby, index) in hobbies"
@@ -62,7 +62,7 @@
           >
             <a-input
               v-model:value="hobbies[index]"
-              :placeholder="`爱好 ${index + 1}`"
+              :placeholder="t('userManagement.hobbyPlaceholder', { index: index + 1 })"
               class="hobby-input"
             />
             <a-button
@@ -71,7 +71,7 @@
               @click="removeHobby(index)"
               class="remove-btn"
             >
-              删除
+              {{ t('userManagement.remove') }}
             </a-button>
           </div>
           <a-button
@@ -82,16 +82,16 @@
             <template #icon>
               <PlusOutlined />
             </template>
-            添加爱好
+            {{ t('userManagement.addHobby') }}
           </a-button>
         </div>
       </a-form-item>
 
       <!-- 富文本编辑器 -->
-      <a-form-item label="用户描述" name="richTextContent">
+      <a-form-item :label="t('userManagement.userDescription')" name="richTextContent">
         <RichTextEditor
           v-model:modelValue="localFormData.richTextContent"
-          title="用户描述编辑器"
+          :title="t('userManagement.userDescription')"
           height="300px"
           @save="handleRichTextSave"
         />
@@ -102,11 +102,14 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
 import type { UserFormData, HobbyItem } from '../types'
 import { createEmptyUserFormData } from '../types'
 import RichTextEditor from '@/views/list-component/component/RichTextEditor.vue'
+
+const { t } = useI18n()
 
 defineOptions({
   name: 'UserFormModal'
@@ -177,26 +180,26 @@ watch(() => localFormData.modificationTime, (newTimestamp) => {
 
 const rules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
+    { required: true, message: t('userManagement.enterUsername'), trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { required: true, message: t('userManagement.enterEmail'), trigger: 'blur' },
+    { type: 'email', message: t('userManagement.enterCorrectEmail'), trigger: 'blur' }
   ],
   role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
+    { required: true, message: t('userManagement.selectRole'), trigger: 'change' }
   ],
   job: [
-    { required: true, message: '请选择职业', trigger: 'change' }
+    { required: true, message: t('userManagement.selectJob'), trigger: 'change' }
   ],
   pet: [
-    { required: false, message: '请选择宠物', trigger: 'change' }
+    { required: false, message: t('userManagement.selectPet'), trigger: 'change' }
   ],
   status: [
-    { required: true, message: '请选择状态', trigger: 'change' }
+    { required: true, message: t('userManagement.selectStatus'), trigger: 'change' }
   ],
   modificationTime: [
-    { required: false, message: '请选择修改时间', trigger: 'change' }
+    { required: false, message: t('userManagement.selectModificationTime'), trigger: 'change' }
   ]
 }
 

@@ -9,19 +9,19 @@
       <!-- 第一行：固定按钮始终在第一排 -->
       <a-row :gutter="16">
         <a-col :span="6">
-          <a-form-item label="用户名" name="username">
+          <a-form-item :label="t('userManagement.username')" name="username">
             <a-input
               v-model:value="searchForm.username"
-              placeholder="请输入用户名"
+              :placeholder="t('userManagement.enterUsername')"
               allow-clear
             />
           </a-form-item>
         </a-col>
         <a-col :span="6">
-          <a-form-item label="邮箱" name="email">
+          <a-form-item :label="t('userManagement.email')" name="email">
             <a-input
               v-model:value="searchForm.email"
-              placeholder="请输入邮箱"
+              :placeholder="t('userManagement.enterEmail')"
               allow-clear
             />
           </a-form-item>
@@ -34,14 +34,14 @@
             <a-space>
               <a-button type="primary" html-type="submit">
                 <template #icon><search-outlined /></template>
-                搜索
+                {{ t('common.search') }}
               </a-button>
               <a-button @click="handleReset">
                 <template #icon><reload-outlined /></template>
-                重置
+                {{ t('common.reset') }}
               </a-button>
               <a-button type="link" @click="toggleExpand">
-                {{ expanded ? '收起' : '展开' }}
+                {{ expanded ? t('common.collapse') : t('common.expand') }}
                 <template #icon>
                   <down-outlined v-if="!expanded" />
                   <up-outlined v-else />
@@ -55,40 +55,40 @@
       <!-- 第二行：展开时显示的额外搜索条件 -->
       <a-row :gutter="16" v-if="expanded">
         <a-col :span="6">
-          <a-form-item label="职业" name="job">
+          <a-form-item :label="t('userManagement.job')" name="job">
             <a-select
               v-model:value="searchForm.job"
-              placeholder="请选择职业"
+              :placeholder="t('userManagement.selectJob')"
               allow-clear
               :options="jobOptions"
             />
           </a-form-item>
         </a-col>
         <a-col :span="6">
-          <a-form-item label="状态" name="status">
+          <a-form-item :label="t('userManagement.status')" name="status">
             <a-select
               v-model:value="searchForm.status"
-              placeholder="请选择状态"
+              :placeholder="t('userManagement.selectStatus')"
               allow-clear
               :options="statusOptions"
             />
           </a-form-item>
         </a-col>
         <a-col :span="6">
-          <a-form-item label="角色" name="role">
+          <a-form-item :label="t('userManagement.role')" name="role">
             <a-select
               v-model:value="searchForm.role"
-              placeholder="请选择角色"
+              :placeholder="t('userManagement.selectRole')"
               allow-clear
               :options="roleOptions"
             />
           </a-form-item>
         </a-col>
         <a-col :span="6">
-          <a-form-item label="提交状态" name="submitStatus">
+          <a-form-item :label="t('userManagement.submitStatus')" name="submitStatus">
             <a-select
               v-model:value="searchForm.submitStatus"
-              placeholder="请选择提交状态"
+              :placeholder="t('userManagement.selectSubmitStatus')"
               allow-clear
               :options="submitStatusOptions"
             />
@@ -99,10 +99,10 @@
       <!-- 第三行：宠物搜索条件 -->
       <a-row :gutter="16" v-if="expanded">
         <a-col :span="6">
-          <a-form-item label="喜欢的宠物" name="pet">
+          <a-form-item :label="t('userManagement.pet')" name="pet">
             <a-select
               v-model:value="searchForm.pet"
-              placeholder="请选择宠物"
+              :placeholder="t('userManagement.selectPet')"
               allow-clear
               :options="petOptions"
             />
@@ -114,9 +114,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { SearchOutlined, ReloadOutlined, DownOutlined, UpOutlined } from '@ant-design/icons-vue'
 import { SubmitStatus } from '../types'
+
+const { t } = useI18n()
 
 defineOptions({
   name: 'UserSearch'
@@ -146,34 +149,34 @@ const searchForm = reactive({
 })
 
 // 职业选项
-const jobOptions = [
-  { label: '老师', value: 1 },
-  { label: 'IT', value: 2 },
-  { label: '医生', value: 3 },
-  { label: '工程师', value: 4 },
-  { label: '设计师', value: 5 }
-]
+const jobOptions = computed(() => [
+  { label: t('userManagement.teacher'), value: 1 },
+  { label: t('userManagement.it'), value: 2 },
+  { label: t('userManagement.doctor'), value: 3 },
+  { label: t('userManagement.engineer'), value: 4 },
+  { label: t('userManagement.designer'), value: 5 }
+])
 
 // 状态选项
-const statusOptions = [
-  { label: '启用', value: 'active' },
-  { label: '禁用', value: 'inactive' }
-]
+const statusOptions = computed(() => [
+  { label: t('userManagement.active'), value: 'active' },
+  { label: t('userManagement.inactive'), value: 'inactive' }
+])
 
 // 角色选项
-const roleOptions = [
-  { label: '管理员', value: 'admin' },
-  { label: '普通用户', value: 'user' },
-  { label: '访客', value: 'guest' }
-]
+const roleOptions = computed(() => [
+  { label: t('userManagement.admin'), value: 'admin' },
+  { label: t('userManagement.user'), value: 'user' },
+  { label: t('userManagement.guest'), value: 'guest' }
+])
 
 // 提交状态选项
-const submitStatusOptions = [
-  { label: '成功', value: SubmitStatus.SUCCESS },
-  { label: '失败', value: SubmitStatus.FAILED },
-  { label: '进行中', value: SubmitStatus.PROCESSING },
-  { label: '重新上传', value: SubmitStatus.REUPLOAD }
-]
+const submitStatusOptions = computed(() => [
+  { label: t('userManagement.success'), value: SubmitStatus.SUCCESS },
+  { label: t('userManagement.failed'), value: SubmitStatus.FAILED },
+  { label: t('userManagement.processing'), value: SubmitStatus.PROCESSING },
+  { label: t('userManagement.reuploadStatus'), value: SubmitStatus.REUPLOAD }
+])
 
 // 宠物选项
 const petOptions = [

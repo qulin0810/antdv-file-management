@@ -38,11 +38,14 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import UserSearch from './components/UserSearch.vue'
 import UserList from './components/UserList.vue'
 import UserFormModal from './components/UserFormModal.vue'
 import type { User, UserFormData, Pagination } from './types'
 import { createEmptyUserFormData, SubmitStatus } from './types'
+
+const { t } = useI18n()
 
 defineOptions({
   name: 'UserManagement'
@@ -59,15 +62,22 @@ const pagination = reactive<Pagination>({
   total: 0,
   showSizeChanger: true,
   showQuickJumper: true,
-  showTotal: (total) => `共 ${total} 条记录`
+  showTotal: (total) => {
+    const currentLocale = localStorage.getItem('locale') || 'zh-CN'
+    if (currentLocale === 'zh-CN') {
+      return `共 ${total} 条记录`
+    } else {
+      return `${total} ${total === 1 ? 'record' : 'records'}`
+    }
+  }
 })
 // 职业选项
 const jobOptions = [
-  { label: '老师', value: 1 },
-  { label: 'IT', value: 2 },
-  { label: '医生', value: 3 },
-  { label: '工程师', value: 4 },
-  { label: '设计师', value: 5 }
+  { label: t('userManagement.teacher'), value: 1 },
+  { label: t('userManagement.it'), value: 2 },
+  { label: t('userManagement.doctor'), value: 3 },
+  { label: t('userManagement.engineer'), value: 4 },
+  { label: t('userManagement.designer'), value: 5 }
 ]
 
 // 宠物选项

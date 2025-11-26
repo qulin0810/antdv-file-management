@@ -5,15 +5,15 @@
       <a-space>
         <a-button type="primary" @click="handleAdd">
           <template #icon><user-add-outlined /></template>
-          新增用户
+          {{ t('userManagement.addUser') }}
         </a-button>
         <a-button type="primary" @click="handleDownload">
           <template #icon><download-outlined /></template>
-          下载文件
+          {{ t('userManagement.downloadFile') }}
         </a-button>
         <a-button type="primary" @click="handleUpload">
           <template #icon><upload-outlined /></template>
-          上传文件
+          {{ t('userManagement.uploadFile') }}
         </a-button>
       </a-space>
     </div>
@@ -53,8 +53,8 @@
         <template v-else-if="column.key === 'status'">
           <a-switch
             :checked="record.status === 'active'"
-            checked-children="启用"
-            un-checked-children="禁用"
+            :checked-children="t('userManagement.enable')"
+            :un-checked-children="t('userManagement.disable')"
             @change="handleSwitchChangeWrapper(record)"
           />
         </template>
@@ -68,28 +68,28 @@
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button type="link" size="small" @click="handleEdit(record)">
-              编辑
+              {{ t('userManagement.edit') }}
             </a-button>
             
             <!-- 根据提交状态显示不同的操作按钮 -->
             <template v-if="record.submitStatus === SubmitStatus.FAILED">
               <a-button type="link" size="small" @click="handleRetry(record)" style="color: #ff4d4f;">
-                重试
+                {{ t('userManagement.retry') }}
               </a-button>
             </template>
             
             <template v-if="record.submitStatus === SubmitStatus.REUPLOAD">
               <a-button type="link" size="small" @click="handleReupload(record)" style="color: #faad14;">
-                重新上传
+                {{ t('userManagement.reupload') }}
               </a-button>
             </template>
             
             <a-popconfirm
-              title="确定要删除这个用户吗？"
+              :title="t('userManagement.confirmDelete')"
               @confirm="handleDelete(record)"
             >
               <a-button type="link" size="small" danger>
-                删除
+                {{ t('userManagement.delete') }}
               </a-button>
             </a-popconfirm>
           </a-space>
@@ -100,13 +100,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { UserAddOutlined, UserOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { User, Pagination } from '../types'
 import { SubmitStatus } from '../types'
 import UserFileModal from '../../../components/UserFileModal.vue'
 import { mockFileDownload } from '../../../utils/fileDownload'
+
+const { t } = useI18n()
 
 const uploading = ref(false)
 const fileModalVisible = ref(false)
@@ -133,33 +136,33 @@ const emit = defineEmits<{
 }>()
 
 // 列配置 - 完整版本，包含操作列
-const columns = [
+const columns = computed(() => [
   {
-    title: '用户名',
+    title: t('userManagement.username'),
     dataIndex: 'username',
     key: 'username',
     width: 120
   },
   {
-    title: '邮箱',
+    title: t('userManagement.email'),
     dataIndex: 'email',
     key: 'email',
     width: 200
   },
   {
-    title: '角色',
+    title: t('userManagement.role'),
     dataIndex: 'role',
     key: 'role',
     width: 100
   },
   {
-    title: '状态',
+    title: t('userManagement.status'),
     dataIndex: 'status',
     key: 'status',
     width: 80
   },
   {
-    title: '提交状态',
+    title: t('userManagement.submitStatus'),
     dataIndex: 'submitStatus',
     key: 'submitStatus',
     width: 120,
@@ -168,7 +171,7 @@ const columns = [
     }
   },
   {
-    title: '职业',
+    title: t('userManagement.job'),
     dataIndex: 'job',
     key: 'job',
     width: 100,
@@ -177,13 +180,13 @@ const columns = [
     }
   },
   {
-    title: '喜欢的宠物',
+    title: t('userManagement.pet'),
     dataIndex: 'pet',
     key: 'pet',
     width: 100
   },
   {
-    title: '爱好',
+    title: t('userManagement.hobbies'),
     dataIndex: 'hobbiesDisplay',
     key: 'hobbies',
     width: 150,
@@ -194,25 +197,25 @@ const columns = [
     }
   },
   {
-    title: '创建时间',
+    title: t('userManagement.createTime'),
     dataIndex: 'createTime',
     key: 'createTime',
     width: 150
   },
   {
-    title: '操作',
+    title: t('userManagement.action'),
     key: 'action',
     width: 250,
     fixed: 'right'
   }
-]
+])
 
 // 智能表格宽度计算
 // 当列数较少时，使用精确列宽总和
 // 当列数较多时，使用响应式宽度计算
 const getTableScrollX = () => {
-  const columnCount = columns.length
-  const totalWidth = columns.reduce((total, column) => total + (column.width || 0), 0)
+  const columnCount = columns.value.length
+  const totalWidth = columns.value.reduce((total, column) => total + (column.width || 0), 0)
   
   // 如果列数少于5列，使用精确列宽总和
   if (columnCount <= 5) {
@@ -224,21 +227,21 @@ const getTableScrollX = () => {
   return Math.max(totalWidth, 1200) // 确保至少1200px宽度
 }
 
-const tableScrollX = getTableScrollX()
+const tableScrollX = computed(getTableScrollX)
 
 // 调试信息
-console.log('列数:', columns.length)
-console.log('列宽总和:', tableScrollX)
-console.log('表格滚动宽度策略:', columns.length <= 5 ? '精确列宽' : '响应式宽度')
+console.log('列数:', columns.value.length)
+console.log('列宽总和:', tableScrollX.value)
+console.log('表格滚动宽度策略:', columns.value.length <= 5 ? '精确列宽' : '响应式宽度')
 
 
 // 职业选项
 const jobOptions = [
-  { label: '老师', value: 1 },
-  { label: 'IT', value: 2 },
-  { label: '医生', value: 3 },
-  { label: '工程师', value: 4 },
-  { label: '设计师', value: 5 }
+  { label: t('userManagement.teacher'), value: 1 },
+  { label: t('userManagement.it'), value: 2 },
+  { label: t('userManagement.doctor'), value: 3 },
+  { label: t('userManagement.engineer'), value: 4 },
+  { label: t('userManagement.designer'), value: 5 }
 ]
 
 const getRoleColor = (role: string) => {
@@ -266,23 +269,23 @@ const getSubmitStatusColor = (status?: SubmitStatus) => {
 
 // 获取提交状态文本
 const getSubmitStatusText = (status?: SubmitStatus) => {
-  if (!status) return '未提交'
+  if (!status) return t('userManagement.notSubmitted')
   
   const statusMap: Record<SubmitStatus, string> = {
-    [SubmitStatus.SUCCESS]: '成功',
-    [SubmitStatus.FAILED]: '失败',
-    [SubmitStatus.PROCESSING]: '进行中',
-    [SubmitStatus.REUPLOAD]: '重新上传'
+    [SubmitStatus.SUCCESS]: t('userManagement.success'),
+    [SubmitStatus.FAILED]: t('userManagement.failed'),
+    [SubmitStatus.PROCESSING]: t('userManagement.processing'),
+    [SubmitStatus.REUPLOAD]: t('userManagement.reuploadStatus')
   }
   
-  return statusMap[status] || '未知'
+  return statusMap[status] || t('userManagement.unknown')
 }
 
 // 获取职业标签
 const getJobLabel = (jobValue?: number) => {
-  if (!jobValue) return '未知'
+  if (!jobValue) return t('userManagement.unknown')
   const job = jobOptions.find(option => option.value === jobValue)
-  return job ? job.label : '未知'
+  return job ? job.label : t('userManagement.unknown')
 }
 
 const handleAdd = () => {
@@ -359,12 +362,12 @@ const handleFileUpload = async (data: { username: string; file: File; descriptio
     }
     
     const result = await response.json()
-    message.success('文件上传成功!')
+    message.success(t('userManagement.fileUploadSuccess'))
     console.log('上传成功:', result)
     
   } catch (error) {
     console.error('上传失败:', error)
-    message.error('文件上传失败，请重试!')
+    message.error(t('userManagement.fileUploadFailed'))
   } finally {
     uploading.value = false
   }
@@ -410,11 +413,11 @@ const handleFileDownload = async (data: { username: string; fileId: string }) =>
       type: fileInfo.type,
       content: fileInfo.content
     })
-    message.success('文件下载成功!')
+    message.success(t('userManagement.fileDownloadSuccess'))
     
   } catch (error) {
     console.error('下载失败:', error)
-    message.error('文件下载失败，请重试!')
+    message.error(t('userManagement.fileDownloadFailed'))
   }
 }
 </script>
