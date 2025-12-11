@@ -55,6 +55,18 @@
       </a-col>
     </a-row>
 
+    <a-row :gutter="16" class="mb-6">
+      <a-col :span="24">
+        <a-card title="权限测试">
+          <p>以下按钮仅对拥有 PER_VIEW_APP_MGMT 权限的用户可见：</p>
+          <a-button type="primary" v-permission="'PER_VIEW_APP_MGMT'">查看应用管理</a-button>
+          <a-button type="default" v-permission="'PER_EDIT_APP_MGMT'" class="ml-2">编辑应用管理</a-button>
+          <a-button type="dashed" v-permission="'PER_DELETE_APP_MGMT'" class="ml-2">删除应用管理</a-button>
+          <p class="mt-4">如果没有相应权限，按钮将不会渲染。</p>
+        </a-card>
+      </a-col>
+    </a-row>
+
     <a-row :gutter="16">
       <a-col :span="16">
         <a-card title="最近文件" class="h-80">

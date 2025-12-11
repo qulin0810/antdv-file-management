@@ -71,6 +71,16 @@ const pagination = reactive<Pagination>({
     }
   }
 })
+// 当前搜索参数
+const currentSearchParams = ref<{ username: string; email: string; job?: number; status?: string; role?: string; submitStatus?: SubmitStatus; pet?: string }>({
+  username: '',
+  email: '',
+  job: undefined,
+  status: undefined,
+  role: undefined,
+  submitStatus: undefined,
+  pet: undefined
+})
 // 职业选项
 const jobOptions = [
   { label: t('userManagement.teacher'), value: 1 },
@@ -320,6 +330,22 @@ const allUserList = ref<User[]>([
 ])
 
 const handleSearch = (searchParams?: { username: string; email: string; job?: number; status?: string; role?: string; submitStatus?: SubmitStatus; pet?: string }) => {
+  // 更新当前搜索参数
+  if (searchParams) {
+    currentSearchParams.value = { ...searchParams }
+  } else {
+    // 如果没有参数，重置为默认值
+    currentSearchParams.value = {
+      username: '',
+      email: '',
+      job: undefined,
+      status: undefined,
+      role: undefined,
+      submitStatus: undefined,
+      pet: undefined
+    }
+  }
+  
   loading.value = true
   // 模拟搜索延迟
   setTimeout(() => {
@@ -382,6 +408,16 @@ const handleSearch = (searchParams?: { username: string; email: string; job?: nu
 }
 
 const handleReset = () => {
+  // 重置搜索参数
+  currentSearchParams.value = {
+    username: '',
+    email: '',
+    job: undefined,
+    status: undefined,
+    role: undefined,
+    submitStatus: undefined,
+    pet: undefined
+  }
   handleSearch()
 }
 

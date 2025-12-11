@@ -272,12 +272,69 @@ const tableConfig: AntTableConfig = {
 
 完整的类型定义请参考 `src/views/list-component/component/type/index.ts` 文件。
 
+## 权限控制
+
+项目集成了基于权限的显示控制，通过自定义指令 `v-permission` 实现。
+
+### 1. 权限存储
+
+用户权限存储在 `auth` store 中，登录后会自动加载权限列表。权限是一个字符串数组，例如 `['PER_VIEW_APP_MGMT', 'PER_EDIT_APP_MGMT']`。
+
+### 2. 使用 v-permission 指令
+
+在模板中，可以直接在元素上使用 `v-permission` 指令，传入权限字符串或数组。如果用户没有相应权限，该元素将被移除。
+
+#### 单个权限
+```vue
+<template>
+  <a-button type="primary" v-permission="'PER_VIEW_APP_MGMT'">查看应用管理</a-button>
+</template>
+```
+
+#### 多个权限（任一）
+```vue
+<template>
+  <div v-permission="['PER_EDIT_APP_MGMT', 'PER_DELETE_APP_MGMT']">
+    拥有编辑或删除权限时显示
+  </div>
+</template>
+```
+
+#### 在表格操作列中使用
+在表格配置的 `operation` 中，可以使用 `permission` 字段控制按钮的显示：
+```typescript
+{
+  title: '编辑',
+  type: 'primary',
+  onClick: (record) => handleEdit(record),
+  permission: 'PER_EDIT_APP_MGMT'
+}
+```
+
+### 3. 程序化检查
+
+在脚本中，可以使用 `useAuthStore().hasPermission(permission)` 进行权限检查：
+
+```vue
+<script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const canView = authStore.hasPermission('PER_VIEW_APP_MGMT')
+</script>
+```
+
+### 4. 模拟权限
+
+默认情况下，使用 `admin/123456` 登录的用户将拥有 `PER_VIEW_APP_MGMT` 和 `PER_EDIT_APP_MGMT` 权限。可以根据需要修改 `src/stores/auth.ts` 中的模拟数据。
+
 ## 注意事项
 
 1. **数据源**: 确保 `dataSource` 是一个响应式数组
 2. **分页**: 分页配置需要与后端接口配合使用
 3. **事件处理**: 所有事件都会冒泡到父组件，便于统一处理
 4. **性能**: 对于大数据量表格，建议使用虚拟滚动
+5. **权限**: 权限指令仅在客户端进行显示控制，敏感操作仍需后端验证
 
 ## 常见问题
 
@@ -292,3 +349,6 @@ A: 确保 `slotName` 与模板中的插槽名称一致。
 
 ### Q: TypeScript 类型错误？
 A: 确保正确导入类型定义，并使用正确的类型注解。
+
+### Q: v-permission 指令不生效？
+A: 检查用户是否已登录并拥有相应权限，同时确保指令已正确注册（在 `main.ts` 中）。

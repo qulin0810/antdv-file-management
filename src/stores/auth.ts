@@ -8,6 +8,7 @@ interface UserInfo {
   username: string
   role: string
   avatar?: string
+  permissions?: string[]
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -15,6 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
   const userInfo = ref<UserInfo | null>(null)
   const isAuthenticated = computed(() => !!token.value)
+  const permissions = computed(() => userInfo.value?.permissions || [])
 
   // Actions
   const login = async (username: string, password: string): Promise<boolean> => {
@@ -28,7 +30,8 @@ export const useAuthStore = defineStore('auth', () => {
             const mockUserInfo: UserInfo = {
               id: '1',
               username: 'admin',
-              role: 'admin'
+              role: 'admin',
+              permissions: ['PER_VIEW_APP_MGMT', 'PER_EDIT_APP_MGMT'] // 示例权限
             }
             
             token.value = mockToken
@@ -67,6 +70,11 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login')
   }
 
+  // 检查权限
+  const hasPermission = (permission: string): boolean => {
+    return permissions.value.includes(permission)
+  }
+
   const initializeAuth = () => {
     const storedToken = localStorage.getItem('token')
     const storedUserInfo = localStorage.getItem('userInfo')
@@ -92,10 +100,12 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     userInfo,
     isAuthenticated,
+    permissions,
     
     // Actions
     login,
     logout,
-    initializeAuth
+    initializeAuth,
+    hasPermission
   }
 })

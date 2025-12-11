@@ -1,0 +1,863 @@
+<template>
+  <div class="rich-text-editor-container">
+    <a-card :title="title" class="editor-card">
+      <template #extra>
+        <a-space>
+          <a-button @click="handleClear">清空</a-button>
+        </a-space>
+      </template>
+      
+      <div class="editor-wrapper">
+        <!-- Quill 编辑器 -->
+        <div ref="editorRef" class="quill-editor"></div>
+        
+        <!-- 预览区域 -->
+        <div class="preview-section" v-if="showPreview">
+          <a-divider>预览</a-divider>
+          <div class="preview-content" v-html="content"></div>
+        </div>
+      </div>
+
+      <!-- 图片大小调整弹窗 -->
+      <a-modal
+        v-model:visible="imageSizeModalVisible"
+        title="调整图片大小"
+        @ok="confirmImageSize"
+        @cancel="cancelImageSize"
+      >
+        <a-form layout="vertical">
+          <a-form-item label="图片预览">
+            <div class="image-preview">
+              <img :src="selectedImage?.src" :alt="selectedImage?.alt" class="preview-image" />
+            </div>
+          </a-form-item>
+          <a-row :gutter="16">
+            <a-col :span="12">
+              <a-form-item label="宽度 (px)">
+                <a-input-number
+                  v-model:value="imageWidth"
+                  :min="50"
+                  :max="2000"
+                  style="width: 100%"
+                  placeholder="宽度"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :span="12">
+              <a-form-item label="高度 (px)">
+                <a-input-number
+                  v-model:value="imageHeight"
+                  :min="50"
+                  :max="2000"
+                  style="width: 100%"
+                  placeholder="高度"
+                />
+              </a-form-item>
+            </a-col>
+          </a-row>
+          <a-form-item label="保持宽高比">
+            <a-switch v-model:checked="maintainAspectRatio" />
+          </a-form-item>
+          <a-space>
+            <!-- <a-button @click="setImageSize(100, 100)">小 (100x100)</a-button>
+            <a-button @click="setImageSize(300, 200)">中 (300x200)</a-button>
+            <a-button @click="setImageSize(500, 300)">大 (500x300)</a-button> -->
+            <a-button @click="resetImageSize">重置</a-button>
+          </a-space>
+        </a-form>
+      </a-modal>
+    </a-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { message } from 'ant-design-vue';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+
+// 注册 div 标签格式
+const Div = Quill.import('blots/block');
+class DivBlot extends Div {
+  static blotName = 'div';
+  static tagName = 'div';
+}
+Quill.register(DivBlot);
+
+// 清理所有删除按钮
+function cleanupDeleteButtons() {
+  if (quill) {
+    const editor = quill.root;
+    const deleteButtons = editor.querySelectorAll('button');
+    deleteButtons.forEach(btn => {
+      if (btn.innerHTML === '┌ ┐') {
+        btn.remove();
+      }
+    });
+  }
+}
+
+interface Props {
+  modelValue?: string;
+  title?: string;
+  height?: string;
+  showPreview?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: '',
+  title: '富文本编辑器',
+  height: '400px',
+  showPreview: true,
+});
+
+const emit = defineEmits<{
+  'update:modelValue': [value: string];
+  'save': [content: string];
+  'change': [content: string];
+  'blur': [content: string];
+}>();
+
+const editorRef = ref<HTMLElement>();
+const content = ref(props.modelValue);
+let quill: Quill | null = null;
+
+// 图片大小调整相关变量
+const imageSizeModalVisible = ref(false);
+const selectedImage = ref<HTMLImageElement | null>(null);
+const imageWidth = ref<number | null>(null);
+const imageHeight = ref<number | null>(null);
+const maintainAspectRatio = ref(true);
+const originalAspectRatio = ref(1);
+
+// 存储图片File对象的Map，key为图片URL或临时标识
+const imageFileMap = new Map<string, File>();
+
+// Quill 配置
+const quillOptions = {
+  modules: {
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'font': [] }],
+        [{ 'size': ['small', false, 'large', 'huge'] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'direction': 'rtl' }],
+        [{ 'align': [] }],
+        ['blockquote', 'code-block'],
+        ['link', 'image', 'video'],
+        ['clean']
+      ],
+      handlers: {
+        'image': imageHandler
+      }
+    }
+  },
+  theme: 'snow',
+  placeholder: '请输入内容...',
+  formats: [
+    'header', 'font', 'size',
+    'bold', 'italic', 'underline', 'strike',
+    'color', 'background',
+    'script',
+    'list', 'bullet', 'indent',
+    'direction', 'align',
+    'blockquote', 'code-block',
+    'link', 'image', 'video',
+    'div'  // 添加 div 格式支持
+  ]
+};
+
+// 图片处理函数
+function imageHandler() {
+  debugger
+  const input = document.createElement('input');
+  input.setAttribute('type', 'file');
+  input.setAttribute('accept', 'image/*');
+  input.click();
+  debugger
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (file) {
+      try {
+        // 上传图片到后端
+        const imageUrl = await uploadImageToServer(file);
+        
+        const range = quill?.getSelection();
+        if (range && imageUrl) {
+          quill?.insertEmbed(range.index, 'image', imageUrl);
+          
+          // 添加图片点击事件监听
+          setTimeout(() => {
+            addImageClickListeners();
+          }, 100);
+        }
+      } catch (error) {
+        console.error('图片上传失败:', error);
+        message.error('图片上传失败，请重试');
+      }
+    }
+  };
+}
+
+// 上传图片到服务器
+async function uploadImageToServer(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  try {
+    const response = await fetch('/api/upload/image', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`上传失败: ${response.status} ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    // 假设后端返回的数据结构为 { success: true, data: { url: '图片URL' } }
+    if (result.success && result.data && result.data.url) {
+      return result.data.url;
+    } else {
+      throw new Error('上传响应格式错误');
+    }
+  } catch (error) {
+    console.error('图片上传失败:', error);
+    throw error;
+  }
+}
+
+// 添加图片点击事件监听
+function addImageClickListeners() {
+  if (!quill) return;
+
+  const editor = quill.root;
+  const images = editor.querySelectorAll('img');
+  
+  images.forEach(img => {
+    // 移除现有的事件监听器
+    img.removeEventListener('click', handleImageClick);
+    // 添加新的事件监听器
+    img.addEventListener('click', handleImageClick);
+    
+    // 添加可调整大小的样式
+    img.style.cursor = 'pointer';
+    img.style.border = '2px dashed transparent';
+    img.style.transition = 'border-color 0.3s';
+    
+    // 在addImageClickListeners中获取File对象
+    const file = getImageFile(img);
+    if (file) {
+      console.log('在addImageClickListeners中获取到File对象:', file);
+      // 这里可以处理File对象，比如上传到其他接口等
+      handleImageFileInAddImageClickListeners(file, img);
+    } else {
+      console.log('在addImageClickListeners中未找到File对象，图片src:', img.src);
+      // 如果是base64图片，尝试转换并上传
+      if (img.src.startsWith('data:')) {
+        handleBase64Image(img);
+      }
+    }
+  });
+}
+
+// 处理base64图片
+async function handleBase64Image(img: HTMLImageElement) {
+  try {
+    const base64String = img.src;
+    // 将base64转换为File对象
+    const response = await fetch(base64String);
+    const blob = await response.blob();
+    const file = new File([blob], 'image.png', { type: blob.type });
+    
+    // 保存到Map中
+    imageFileMap.set(base64String, file);
+    
+    console.log('base64图片已转换为File对象:', file);
+    
+    // 处理File对象
+    handleImageFileInAddImageClickListeners(file, img);
+  } catch (error) {
+    console.error('base64图片处理失败:', error);
+  }
+}
+
+// 根据图片元素获取对应的File对象
+function getImageFile(img: HTMLImageElement): File | null {
+  const src = img.src;
+  return imageFileMap.get(src) || null;
+}
+
+// 在addImageClickListeners中处理File对象
+function handleImageFileInAddImageClickListeners(file: File, img: HTMLImageElement) {
+  // 这里可以调用其他后端接口，比如上传到不同的URL
+  console.log('处理图片File:', file.name, file.size, file.type);
+  
+  // 示例：调用自定义上传接口
+  uploadToCustomEndpoint(file)
+    .then(imageUrl => {
+      // 上传成功后，将图片的src替换为后端返回的URL
+      const originalSrc = img.src;
+      img.src = imageUrl;
+      
+      // 更新Map中的key
+      imageFileMap.set(imageUrl, file);
+      imageFileMap.delete(originalSrc);
+      
+      console.log('图片URL已替换:', originalSrc, '->', imageUrl);
+      message.success('图片已上传到自定义接口');
+    })
+    .catch(error => {
+      console.error('自定义上传失败:', error);
+      message.error('自定义上传失败，请重试');
+    });
+}
+
+// 上传到自定义端点的函数
+async function uploadToCustomEndpoint(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  try {
+    const response = await fetch('/api/custom/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`自定义上传失败: ${response.status}`);
+    }
+    
+    const result = await response.json();
+      return result.url;
+  } catch (error) {
+    console.error('自定义上传失败:', error);
+        throw error;
+      }
+}
+
+// 处理图片点击
+function handleImageClick(event: Event) {
+  const img = event.target as HTMLImageElement;
+  selectedImage.value = img;
+  
+  // 添加选中样式
+  img.style.borderColor = '#1890ff';
+  
+  // 添加删除按钮
+  addDeleteButton(img);
+  
+  // 移除其他图片的选中样式和删除按钮
+  if (quill) {
+    const editor = quill.root;
+    const allImages = editor.querySelectorAll('img');
+    allImages.forEach(otherImg => {
+      if (otherImg !== img) {
+        otherImg.style.borderColor = 'transparent';
+        removeDeleteButton(otherImg);
+      }
+    });
+  }
+}
+
+// 显示图片大小调整弹窗
+const showImageSizeModal = () => {
+  if (!selectedImage.value) {
+    message.warning('请先选择一张图片');
+    return;
+  }
+  
+  imageWidth.value = selectedImage.value.width || selectedImage.value.naturalWidth;
+  imageHeight.value = selectedImage.value.height || selectedImage.value.naturalHeight;
+  originalAspectRatio.value = selectedImage.value.naturalWidth / selectedImage.value.naturalHeight;
+  imageSizeModalVisible.value = true;
+};
+
+// 添加删除按钮
+function addDeleteButton(img: HTMLImageElement) {
+  // 如果已经有删除按钮，先移除
+  removeDeleteButton(img);
+  
+  const deleteBtn = document.createElement('button');
+  deleteBtn.innerHTML = '┌ ┐';
+  deleteBtn.style.cssText = `
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  `;
+  
+  deleteBtn.onclick = (e) => {
+    e.stopPropagation();
+    deleteImage(img);
+  };
+  
+  // 确保图片有相对定位的父容器
+  if (img.parentElement && img.parentElement.style.position !== 'relative') {
+    img.parentElement.style.position = 'relative';
+  }
+  
+  img.parentElement?.appendChild(deleteBtn);
+}
+
+// 移除删除按钮
+function removeDeleteButton(img: HTMLImageElement) {
+  const deleteBtn = img.parentElement?.querySelector('button');
+  if (deleteBtn) {
+    deleteBtn.remove();
+  }
+}
+
+// 删除图片
+function deleteImage(img: HTMLImageElement) {
+  if (quill) {
+    const editor = quill.root;
+    const imgContainer = img.parentElement;
+    
+    if (imgContainer) {
+      imgContainer.remove();
+      
+      // 更新内容
+      content.value = editor.innerHTML;
+      emit('update:modelValue', content.value);
+      
+      message.success('图片已删除');
+    }
+  }
+  
+  selectedImage.value = null;
+}
+
+
+// 确认图片大小调整
+const confirmImageSize = () => {
+  if (!selectedImage.value || !imageWidth.value || !imageHeight.value) {
+    message.warning('请设置有效的图片尺寸');
+    return;
+  }
+  
+  selectedImage.value.width = imageWidth.value;
+  selectedImage.value.height = imageHeight.value;
+  selectedImage.value.style.width = `${imageWidth.value}px`;
+  selectedImage.value.style.height = `${imageHeight.value}px`;
+  
+  // 更新编辑器内容
+  if (quill) {
+    content.value = quill.root.innerHTML;
+    emit('update:modelValue', content.value);
+  }
+  
+  imageSizeModalVisible.value = false;
+  message.success('图片大小已调整');
+};
+
+// 取消图片大小调整
+const cancelImageSize = () => {
+  imageSizeModalVisible.value = false;
+  // 不清除选中状态，保持图片选中
+};
+
+// 设置预设图片大小
+// const setImageSize = (width: number, height: number) => {
+//   imageWidth.value = width;
+//   imageHeight.value = height;
+// };
+
+// 重置图片大小
+const resetImageSize = () => {
+  if (selectedImage.value) {
+    imageWidth.value = selectedImage.value.naturalWidth;
+    imageHeight.value = selectedImage.value.naturalHeight;
+  }
+};
+
+// 监听宽度变化，自动调整高度（如果保持宽高比）
+watch(imageWidth, (newWidth) => {
+  if (maintainAspectRatio.value && newWidth && originalAspectRatio.value) {
+    imageHeight.value = Math.round(newWidth / originalAspectRatio.value);
+  }
+});
+
+// 监听高度变化，自动调整宽度（如果保持宽高比）
+watch(imageHeight, (newHeight) => {
+  if (maintainAspectRatio.value && newHeight && originalAspectRatio.value) {
+    imageWidth.value = Math.round(newHeight * originalAspectRatio.value);
+  }
+});
+
+// 初始化 Quill 编辑器
+onMounted(() => {
+  if (editorRef.value) {
+    quill = new Quill(editorRef.value, quillOptions);
+    
+    // 设置初始内容
+    if (props.modelValue) {
+      quill.root.innerHTML = props.modelValue;
+      // 为现有图片添加点击事件
+      setTimeout(() => {
+        addImageClickListeners();
+      }, 100);
+    }
+    
+    // 监听内容变化
+    quill.on('text-change', () => {
+      const html = quill?.root.innerHTML || '';
+      content.value = html;
+      emit('update:modelValue', html);
+      emit('change', html);
+      // 清理删除按钮
+      cleanupDeleteButtons();
+      
+      // 如果选中的图片已不在编辑器中，清除选中状态
+      if (selectedImage.value && quill && !quill.root.contains(selectedImage.value)) {
+        selectedImage.value.style.borderColor = 'transparent';
+        removeDeleteButton(selectedImage.value);
+        selectedImage.value = null;
+        // 关闭图片大小调整弹窗
+        imageSizeModalVisible.value = false;
+      }
+      
+      // 为新增的图片添加点击事件
+      setTimeout(() => {
+        addImageClickListeners();
+      }, 100);
+    });
+    
+    // 处理粘贴事件，保留 div 标签
+    quill.root.addEventListener('paste', (e) => {
+      // 允许默认粘贴行为，Quill 会处理格式
+      setTimeout(() => {
+        // 确保内容被正确更新
+        const html = quill?.root.innerHTML || '';
+        content.value = html;
+        emit('update:modelValue', html);
+      }, 0);
+    });
+    
+    // 监听编辑器点击事件，用于取消图片选中
+    quill.root.addEventListener('click', (event) => {
+      if (!(event.target instanceof HTMLImageElement)) {
+        // 点击非图片区域，取消选中
+        if (selectedImage.value) {
+          selectedImage.value.style.borderColor = 'transparent';
+          removeDeleteButton(selectedImage.value);
+          selectedImage.value = null;
+        }
+      }
+    });
+    
+    // 添加自定义图片大小调整按钮到工具栏
+    setTimeout(() => {
+      addImageSizeButtonToToolbar();
+    }, 100);
+
+    // 添加编辑器失焦事件监听
+    quill.root.addEventListener('blur', handleEditorBlur);
+  }
+});
+
+// 添加图片大小调整按钮到工具栏
+function addImageSizeButtonToToolbar() {
+  if (!quill) return;
+  
+  // 直接通过DOM查找工具栏元素
+  const toolbarElement = document.querySelector('.ql-toolbar');
+  if (!toolbarElement) return;
+  
+  // 创建图片大小调整按钮
+  const imageSizeButton = document.createElement('button');
+  imageSizeButton.innerHTML = `
+    <svg viewBox="64 64 896 896" focusable="false" data-icon="experiment" width="16" height="16" fill="currentColor" aria-hidden="true">
+      <path d="M512 472a40 40 0 1080 0 40 40 0 10-80 0zm367 352.9L696.3 352V178H768v-68H256v68h71.7v174L145 824.9c-2.8 7.4-4.3 15.2-4.3 23.1 0 35.3 28.7 64 64 64h614.6c7.9 0 15.7-1.5 23.1-4.3 33-12.7 49.4-49.8 36.6-82.8zM395.7 364.7V180h232.6v184.7L719.2 600c-20.7-5.3-42.1-8-63.9-8-61.2 0-119.2 21.5-165.3 60a188.78 188.78 0 01-121.3 43.9c-32.7 0-64.1-8.3-91.8-23.7l118.8-307.5zM210.5 844l41.7-107.8c35.7 18.1 75.4 27.8 116.6 27.8 61.2 0 119.2-21.5 165.3-60 33.9-28.2 76.3-43.9 121.3-43.9 35 0 68.4 9.5 97.6 27.1L813.5 844h-603z"></path>
+    </svg>
+  `;
+  imageSizeButton.title = '修改图片大小';
+  imageSizeButton.style.cssText = `
+    width: 32px;
+    height: 28px;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #444;
+    transition: all 0.2s;
+    margin-left: 8px;
+  `;
+  
+  // 初始状态
+  updateImageSizeButtonState(false);
+  
+  imageSizeButton.addEventListener('click', () => {
+    if (!selectedImage.value) {
+      message.warning('请先选择一张图片');
+      return;
+    }
+    showImageSizeModal();
+  });
+  
+  // 将按钮添加到工具栏
+  toolbarElement.appendChild(imageSizeButton);
+  
+  // 监听选中图片变化，更新按钮状态
+  watch(selectedImage, (newImage) => {
+    updateImageSizeButtonState(!!newImage);
+  });
+  
+  // 更新按钮状态
+  function updateImageSizeButtonState(enabled: boolean) {
+    if (enabled) {
+      imageSizeButton.disabled = false;
+      imageSizeButton.style.backgroundColor = '#1890ff';
+      imageSizeButton.style.color = 'white';
+      imageSizeButton.style.borderColor = '#1890ff';
+      imageSizeButton.style.cursor = 'pointer';
+    } else {
+      imageSizeButton.disabled = true;
+      imageSizeButton.style.backgroundColor = '#f5f5f5';
+      imageSizeButton.style.color = '#bfbfbf';
+      imageSizeButton.style.borderColor = '#d9d9d9';
+      imageSizeButton.style.cursor = 'not-allowed';
+    }
+  }
+}
+
+// 监听外部内容变化
+watch(() => props.modelValue, (newValue) => {
+  if (quill && newValue !== quill.root.innerHTML) {
+    quill.root.innerHTML = newValue;
+    // 清理删除按钮
+    cleanupDeleteButtons();
+    // 清除选中的图片
+    if (selectedImage.value) {
+      selectedImage.value.style.borderColor = 'transparent';
+      removeDeleteButton(selectedImage.value);
+      selectedImage.value = null;
+    }
+    // 关闭图片大小调整弹窗
+    imageSizeModalVisible.value = false;
+    // 为图片添加点击事件
+    setTimeout(() => {
+      addImageClickListeners();
+    }, 100);
+  }
+});
+
+// 清空内容
+const handleClear = () => {
+  if (quill) {
+    // 完全清空编辑器内容，包括格式
+    quill.root.innerHTML = '';
+    // 清理删除按钮
+    cleanupDeleteButtons();
+    // 清除选中的图片
+    if (selectedImage.value) {
+      selectedImage.value.style.borderColor = 'transparent';
+      removeDeleteButton(selectedImage.value);
+      selectedImage.value = null;
+    }
+    // 关闭图片大小调整弹窗
+    imageSizeModalVisible.value = false;
+    // 更新内容状态
+    content.value = '';
+    emit('update:modelValue', '');
+    emit('change', '');
+    message.success('内容已清空');
+  }
+};
+
+// 保存内容
+const handleSave = () => {
+  emit('save', content.value);
+  message.success('内容已保存');
+};
+
+// 处理编辑器失焦
+const handleEditorBlur = () => {
+  if (content.value && content.value !== props.modelValue) {
+    emit('blur', content.value);
+    message.success('内容已自动保存');
+  }
+};
+
+// 组件销毁时清理
+onUnmounted(() => {
+  cleanupDeleteButtons();
+  if (quill) {
+    quill.root.removeEventListener('blur', handleEditorBlur);
+    quill = null;
+  }
+});
+</script>
+
+<style scoped>
+.rich-text-editor-container {
+  width: 100%;
+}
+
+.editor-card {
+  min-height: 500px;
+}
+
+.editor-wrapper {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.quill-editor {
+  min-height: v-bind(height);
+}
+
+:deep(.ql-editor) {
+  min-height: v-bind(height);
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+:deep(.ql-toolbar) {
+  border-bottom: 1px solid #d9d9d9;
+  background: #fafafa;
+}
+
+:deep(.ql-container) {
+  border: none;
+  font-size: 14px;
+}
+
+:deep(.ql-editor h1) {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0.67em 0;
+}
+
+:deep(.ql-editor h2) {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.75em 0;
+}
+
+:deep(.ql-editor h3) {
+  font-size: 1.17em;
+  font-weight: bold;
+  margin: 0.83em 0;
+}
+
+:deep(.ql-editor h4) {
+  font-size: 1em;
+  font-weight: bold;
+  margin: 1.12em 0;
+}
+
+:deep(.ql-editor h5) {
+  font-size: 0.83em;
+  font-weight: bold;
+  margin: 1.5em 0;
+}
+
+:deep(.ql-editor h6) {
+  font-size: 0.67em;
+  font-weight: bold;
+  margin: 2.33em 0;
+}
+
+:deep(.ql-editor p) {
+  margin: 0 0 1em 0;
+}
+
+:deep(.ql-editor ul),
+:deep(.ql-editor ol) {
+  padding-left: 1.5em;
+  margin: 1em 0;
+}
+
+:deep(.ql-editor blockquote) {
+  border-left: 4px solid #ccc;
+  margin: 1em 0;
+  padding-left: 16px;
+  color: #666;
+  font-style: italic;
+}
+
+:deep(.ql-editor img) {
+  max-width: 100%;
+  height: auto;
+  transition: border-color 0.3s;
+}
+
+:deep(.ql-editor img:hover) {
+  border-color: #1890ff !important;
+}
+
+:deep(.ql-editor a) {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+:deep(.ql-editor a:hover) {
+  text-decoration: underline;
+}
+
+
+.preview-section {
+  margin-top: 16px;
+}
+
+.preview-content {
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fafafa;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+.preview-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.preview-content :deep(a) {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.preview-content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.image-preview {
+  text-align: center;
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+</style>
