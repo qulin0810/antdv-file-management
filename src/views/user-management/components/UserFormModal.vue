@@ -141,17 +141,7 @@ const localFormData = reactive<UserFormData>({
 
 // 计算属性确保hobbies数组始终存在
 const hobbies = computed({
-  get: () => {
-    // 优先使用hobbies数组，如果没有则从hobbiesDisplay转换
-    if (localFormData.hobbies && localFormData.hobbies.length > 0) {
-      return localFormData.hobbies
-    }
-    // 如果hobbies为空但有hobbiesDisplay，转换为字符串数组
-    if (localFormData.hobbiesDisplay && localFormData.hobbiesDisplay.length > 0) {
-      return localFormData.hobbiesDisplay.map(item => item.hobby)
-    }
-    return []
-  },
+  get: () => localFormData.hobbies || [],
   set: (value) => {
     localFormData.hobbies = value
   }

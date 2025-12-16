@@ -20,6 +20,7 @@ const routes: RouteRecordRaw[] = [
                     title: "仪表板",
                     icon: "dashboard",
                     requiresAuth: true,
+                    //resourceCode: 'PER_VIEW_IT_DASHBOARD'
                 },
             },
             {
@@ -40,6 +41,7 @@ const routes: RouteRecordRaw[] = [
                     title: "用户管理",
                     icon: "user",
                     requiresAuth: true,
+                   
                 },
             },
             {
@@ -139,6 +141,14 @@ const routes: RouteRecordRaw[] = [
             title: "登录",
         },
     },
+    {
+        path: "/403",
+        name: "Forbidden",
+        component: () => import("@/views/error/403.vue"),
+        meta: {
+            title: "无权限",
+        },
+    },
 ];
 
 const router = createRouter({
@@ -159,7 +169,18 @@ router.beforeEach((to, from, next) => {
     next('/')
   }
   else {
-    next()
+    // 检查路由权限
+    const resourceCode = to.meta.resourceCode as string | undefined
+    if (resourceCode) {
+      if (authStore.hasPermission(resourceCode)) {
+        next()
+      } else {
+        // 无权限，重定向到403页面
+        next('/403')
+      }
+    } else {
+      next()
+    }
   }
 })
 

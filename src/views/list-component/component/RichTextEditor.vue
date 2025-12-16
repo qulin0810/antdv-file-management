@@ -805,4 +805,94 @@ onUnmounted(() => {
   max-height: 200px;
   object-fit: contain;
 }
+
+/* 代码块样式 */
+:deep(.ql-editor pre.ql-syntax) {
+  background-color: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  color: #24292e;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 1em 0;
+  overflow: auto;
+  padding: 16px;
+  white-space: pre;
+}
+
+/* 代码块行号样式 */
+:deep(.ql-editor pre.ql-syntax .ql-code-block-line-number) {
+  color: #6a737d;
+  display: inline-block;
+  margin-right: 1em;
+  text-align: right;
+  user-select: none;
+  width: 2em;
+}
+
+/* 代码块内文本样式 */
+:deep(.ql-editor pre.ql-syntax code) {
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+}
+
+/* 代码块高亮样式 */
+:deep(.ql-editor pre.ql-syntax .hljs-keyword) {
+  color: #d73a49;
+}
+
+:deep(.ql-editor pre.ql-syntax .hljs-string) {
+  color: #032f62;
+}
+
+:deep(.ql-editor pre.ql-syntax .hljs-comment) {
+  color: #6a737d;
+  font-style: italic;
+}
+
+:deep(.ql-editor pre.ql-syntax .hljs-function) {
+  color: #6f42c1;
+}
+
+:deep(.ql-editor pre.ql-syntax .hljs-number) {
+  color: #005cc5;
+}
+
+/* 代码块工具栏样式 */
+:deep(.ql-toolbar .ql-code-block) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='16 18 22 12 16 6'%3E%3C/polyline%3E%3Cpolyline points='8 6 2 12 8 18'%3E%3C/polyline%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
+/* 代码块选中状态 */
+:deep(.ql-editor pre.ql-syntax:focus) {
+  border-color: #0366d6;
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
+}
+
+/* 代码块滚动条样式 */
+:deep(.ql-editor pre.ql-syntax::-webkit-scrollbar) {
+  width: 8px;
+  height: 8px;
+}
+
+:deep(.ql-editor pre.ql-syntax::-webkit-scrollbar-track) {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+:deep(.ql-editor pre.ql-syntax::-webkit-scrollbar-thumb) {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+:deep(.ql-editor pre.ql-syntax::-webkit-scrollbar-thumb:hover) {
+  background: #a8a8a8;
+}
 </style>
