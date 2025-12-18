@@ -25,12 +25,29 @@ export interface User {
   richTextContent?: string     // 富文本内容
   hobbies?: string[]           // 爱好数组（创建/提交格式）
   hobbiesDisplay?: HobbyItem[] // 爱好显示格式（回显格式）
+  books?: BookItem[]           // 书籍数组（创建/提交格式）
+  booksDisplay?: BookDisplayItem[] // 书籍显示格式（回显格式）
 }
 
 // 爱好显示项接口
 export interface HobbyItem {
   id: number
   hobby: string
+}
+
+// 书籍项接口（用于表单输入）
+export interface BookItem {
+  id: number
+  bookName: string
+  bookDisplayName?: string
+  author: string
+}
+
+// 书籍显示项接口（用于显示）
+export interface BookDisplayItem {
+  id: number
+  bookName: string
+  author: string
 }
 
 export interface Pagination {
@@ -54,6 +71,8 @@ export interface UserFormData {
   richTextContent?: string
   hobbies?: string[]           // 爱好数组（创建/提交格式）
   hobbiesDisplay?: HobbyItem[] // 爱好显示格式（回显格式）
+  books?: BookItem[]           // 书籍数组（创建/提交格式）
+  booksDisplay?: BookDisplayItem[] // 书籍显示格式（回显格式）
   modificationTime?: number    // 修改时间（时间戳）
 }
 
@@ -66,5 +85,6 @@ export const createEmptyUserFormData = (): UserFormData => ({
   pet: undefined,
   richTextContent: '',
   hobbies: [],                 // 初始化空数组
+  books: [],                   // 初始化书籍空数组
   modificationTime: undefined  // 初始化修改时间
 })

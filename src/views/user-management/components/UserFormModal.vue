@@ -87,6 +87,48 @@
         </div>
       </a-form-item>
 
+      <!-- 书籍输入区域 -->
+      <a-form-item :label="t('userManagement.books')">
+        <div class="books-container">
+          <div
+            v-for="(book, index) in books"
+            :key="book.id"
+            class="book-item"
+          >
+            <a-select
+              v-model:value="book.bookName"
+              :placeholder="t('userManagement.selectBook')"
+              class="book-select"
+              :options="bookOptions"
+              @change="(value) => handleBookSelectChange(value, index)"
+            />
+            <a-input
+              v-model:value="book.bookDisplayName"
+              :placeholder="t('userManagement.enterBookName')"
+              class="book-input"
+            />
+            <a-button
+              type="link"
+              danger
+              @click="removeBook(index)"
+              class="remove-btn"
+            >
+              {{ t('userManagement.remove') }}
+            </a-button>
+          </div>
+          <a-button
+            type="dashed"
+            @click="addBook"
+            class="add-book-btn"
+          >
+            <template #icon>
+              <PlusOutlined />
+            </template>
+            {{ t('userManagement.addBook') }}
+          </a-button>
+        </div>
+      </a-form-item>
+
       <!-- 富文本编辑器 -->
       <a-form-item :label="t('userManagement.userDescription')" name="richTextContent">
         <RichTextEditor
@@ -105,7 +147,7 @@ import { reactive, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
-import type { UserFormData, HobbyItem } from '../types'
+import type { UserFormData, HobbyItem, BookItem } from '../types'
 import { createEmptyUserFormData } from '../types'
 import RichTextEditor from '@/views/list-component/component/RichTextEditor.vue'
 
@@ -136,7 +178,8 @@ const emit = defineEmits<{
 const formRef = ref()
 const localFormData = reactive<UserFormData>({
   ...createEmptyUserFormData(),
-  hobbies: [] // 确保hobbies数组被初始化
+  hobbies: [], // 确保hobbies数组被初始化
+  books: []    // 确保books数组被初始化
 })
 
 // 计算属性确保hobbies数组始终存在
@@ -146,6 +189,25 @@ const hobbies = computed({
     localFormData.hobbies = value
   }
 })
+
+// 计算属性确保books数组始终存在
+const books = computed({
+  get: () => localFormData.books || [],
+  set: (value) => {
+    localFormData.books = value
+  }
+})
+
+// 书籍选项
+const bookOptions = [
+  { label: 'JavaScript高级程序设计', value: 'JavaScript高级程序设计' },
+  { label: 'Vue.js设计与实现', value: 'Vue.js设计与实现' },
+  { label: 'React进阶之路', value: 'React进阶之路' },
+  { label: 'TypeScript编程', value: 'TypeScript编程' },
+  { label: '算法导论', value: '算法导论' },
+  { label: '设计模式', value: '设计模式' },
+  { label: '其他', value: '其他' }
+]
 
 // 修改时间的日期对象（用于DatePicker）
 const modificationTimeDate = ref<string | null>(null)
@@ -219,6 +281,18 @@ watch(
         if (props.formData.hobbiesDisplay && props.formData.hobbiesDisplay.length > 0) {
           localFormData.hobbies = props.formData.hobbiesDisplay.map(item => item.hobby)
         }
+        // 确保书籍数据正确设置
+        const normalizeBooks = (books: BookItem[]): BookItem[] => {
+          return books.map(book => ({
+            ...book,
+            bookDisplayName: book.bookDisplayName || book.bookName
+          }))
+        }
+        if (props.formData.booksDisplay && props.formData.booksDisplay.length > 0) {
+          localFormData.books = normalizeBooks([...props.formData.booksDisplay])
+        } else if (props.formData.books && props.formData.books.length > 0) {
+          localFormData.books = normalizeBooks([...props.formData.books])
+        }
         // 设置修改时间的日期显示
         if (props.formData.modificationTime) {
           modificationTimeDate.value = dayjs(props.formData.modificationTime).format('YYYY-MM-DD')
@@ -235,6 +309,30 @@ watch(
   { immediate: true }
 )
 
+// 书籍相关方法
+const addBook = () => {
+  const newId = books.value.length > 0 ? Math.max(...books.value.map(b => b.id)) + 1 : 1
+  books.value.push({
+    id: newId,
+    bookName: '',
+    bookDisplayName: '',
+    author: '' // 保留字段但不再使用
+  })
+}
+
+const removeBook = (index: number) => {
+  books.value.splice(index, 1)
+}
+
+const handleBookSelectChange = (value: string, index: number) => {
+  // 当选择书籍时，更新bookDisplayName为相同的值
+  const book = books.value[index]
+  if (book) {
+    book.bookDisplayName = value
+  }
+  console.log(`选择了书籍: ${value}，索引: ${index}`)
+}
+
 const handleOk = async () => {
   try {
     await formRef.value.validate()
@@ -247,6 +345,13 @@ const handleOk = async () => {
       submitData.hobbiesDisplay = convertHobbiesSubmitToDisplay(submitData.hobbies)
     } else {
       submitData.hobbiesDisplay = []
+    }
+    
+    // 确保提交时booksDisplay格式正确
+    if (submitData.books && submitData.books.length > 0) {
+      submitData.booksDisplay = [...submitData.books]
+    } else {
+      submitData.booksDisplay = []
     }
     
     emit('ok', submitData, props.isEdit)
@@ -282,6 +387,8 @@ const resetLocalFormData = () => {
   Object.assign(localFormData, emptyForm)
   // 确保hobbies数组被正确重置
   localFormData.hobbies = []
+  // 确保books数组被正确重置
+  localFormData.books = []
 }
 
 const resetForm = () => {
@@ -310,12 +417,33 @@ const resetForm = () => {
   flex: 1;
 }
 
+.books-container {
+  width: 100%;
+}
+
+.book-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.book-select {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.book-input {
+  flex: 1;
+}
+
 .remove-btn {
   flex-shrink: 0;
   padding: 4px 8px;
 }
 
-.add-hobby-btn {
+.add-hobby-btn,
+.add-book-btn {
   width: 100%;
   margin-top: 8px;
 }

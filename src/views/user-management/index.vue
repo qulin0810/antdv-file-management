@@ -118,6 +118,14 @@ const allUserList = ref<User[]>([
     hobbiesDisplay: [
       { id: 1, hobby: '打球' },
       { id: 2, hobby: '游泳' }
+    ],
+    books: [
+      { id: 1, bookName: 'JavaScript高级程序设计', author: 'Nicholas C. Zakas' },
+      { id: 2, bookName: 'Vue.js设计与实现', author: '霍春阳' }
+    ],
+    booksDisplay: [
+      { id: 1, bookName: 'JavaScript高级程序设计', author: 'Nicholas C. Zakas' },
+      { id: 2, bookName: 'Vue.js设计与实现', author: '霍春阳' }
     ]
   },
   {
@@ -141,6 +149,14 @@ const allUserList = ref<User[]>([
     hobbiesDisplay: [
       { id: 1, hobby: '阅读' },
       { id: 2, hobby: '写作' }
+    ],
+    books: [
+      { id: 1, bookName: 'React进阶之路', author: '徐超' },
+      { id: 2, bookName: 'TypeScript编程', author: 'Boris Cherny' }
+    ],
+    booksDisplay: [
+      { id: 1, bookName: 'React进阶之路', author: '徐超' },
+      { id: 2, bookName: 'TypeScript编程', author: 'Boris Cherny' }
     ]
   },
   {
@@ -164,6 +180,14 @@ const allUserList = ref<User[]>([
     hobbiesDisplay: [
       { id: 1, hobby: '跑步' },
       { id: 2, hobby: '健身' }
+    ],
+    books: [
+      { id: 1, bookName: '算法导论', author: 'Thomas H. Cormen' },
+      { id: 2, bookName: '设计模式', author: 'Erich Gamma' }
+    ],
+    booksDisplay: [
+      { id: 1, bookName: '算法导论', author: 'Thomas H. Cormen' },
+      { id: 2, bookName: '设计模式', author: 'Erich Gamma' }
     ]
   },
   {
@@ -187,7 +211,9 @@ const allUserList = ref<User[]>([
     hobbiesDisplay: [
       { id: 1, hobby: '编程' },
       { id: 2, hobby: '游戏' }
-    ]
+    ],
+    books: [],
+    booksDisplay: []
   },
   {
     key: '5',
