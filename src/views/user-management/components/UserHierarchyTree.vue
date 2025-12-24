@@ -1,51 +1,61 @@
 <template>
   <div class="user-hierarchy-tree">
-    <a-card :title="title" :bordered="false">
-      <template #extra>
-        <a-space>
-          <a-button type="link" size="small" @click="expandAll">
-            <template #icon><vertical-right-outlined /></template>
-            展开全部
-          </a-button>
-          <a-button type="link" size="small" @click="collapseAll">
-            <template #icon><vertical-left-outlined /></template>
-            折叠全部
-          </a-button>
-        </a-space>
-      </template>
-
-      <a-tree
-        v-if="treeData.length > 0"
-        :tree-data="treeData"
-        :field-names="fieldNames"
-        :default-expand-all="defaultExpandAll"
-        :show-line="showLine"
-        :show-icon="showIcon"
-        :block-node="true"
-        @select="handleSelect"
-      >
-        <template #title="{ title, dataRef }">
-          <div class="tree-node-title">
-            <span class="username">{{ dataRef.username }}</span>
-            <a-space class="node-info" size="small">
-              <a-tag :color="getRoleColor(dataRef.role)" size="small">
-                {{ getRoleLabel(dataRef.role) }}
-              </a-tag>
-              <a-tag :color="getStatusColor(dataRef.status)" size="small">
-                {{ getStatusLabel(dataRef.status) }}
-              </a-tag>
-              <span v-if="dataRef.email" class="email">{{ dataRef.email }}</span>
-            </a-space>
-          </div>
-        </template>
+    <!-- 模态框组件 -->
+    <a-modal
+      v-model:visible="modalVisible"
+      :title="modalTitle"
+      width="800px"
+      :footer="null"
+      :destroy-on-close="true"
+    >
+      <div class="modal-tree-container">
+        <div class="modal-toolbar">
+          <a-space>
+            <a-button type="link" size="small" @click="expandModalAll">
+              <template #icon><vertical-right-outlined /></template>
+              展开全部
+            </a-button>
+            <a-button type="link" size="small" @click="collapseModalAll">
+              <template #icon><vertical-left-outlined /></template>
+              折叠全部
+            </a-button>
+          </a-space>
+        </div>
         
-        <template #icon="{ dataRef }">
-          <component :is="getIconForNode(dataRef)" :style="{ color: getIconColor(dataRef) }" />
-        </template>
-      </a-tree>
-      
-      <a-empty v-else description="暂无层级数据" />
-    </a-card>
+        <a-tree
+          v-if="modalTreeData.length > 0"
+          :tree-data="modalTreeData"
+          :field-names="fieldNames"
+          :show-line="true"
+          :show-icon="true"
+          :block-node="true"
+          :expanded-keys="modalExpandedKeys"
+          :auto-expand-parent="true"
+          @expand="handleModalExpand"
+        >
+          <template #title="{ title, dataRef }">
+            <div class="tree-node-title">
+              <span class="username">{{ dataRef.username }}</span>
+              <a-space class="node-info" size="small">
+                <a-tag :color="getRoleColor(dataRef.role)" size="small">
+                  {{ getRoleLabel(dataRef.role) }}
+                </a-tag>
+                <a-tag :color="getStatusColor(dataRef.status)" size="small">
+                  {{ getStatusLabel(dataRef.status) }}
+                </a-tag>
+                <span v-if="dataRef.email" class="email">{{ dataRef.email }}</span>
+              </a-space>
+            </div>
+          </template>
+          
+          <template #icon="{ dataRef }">
+            <component :is="getIconForNode(dataRef)" :style="{ color: getIconColor(dataRef) }" />
+          </template>
+        </a-tree>
+        
+        <a-empty v-else description="暂无层级数据" />
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -66,18 +76,23 @@ import {
 import type { TreeNode } from '../types'
 
 interface Props {
-  treeData: TreeNode[]
+  treeData?: TreeNode[]
   title?: string
   defaultExpandAll?: boolean
   showLine?: boolean
   showIcon?: boolean
+  modalTitle?: string
+  modalTreeData?: TreeNode[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  treeData: () => [],
   title: '用户层级关系',
   defaultExpandAll: false,
   showLine: true,
-  showIcon: true
+  showIcon: true,
+  modalTitle: '用户层级关系',
+  modalTreeData: () => []
 })
 
 const emit = defineEmits<{
@@ -90,7 +105,8 @@ const fieldNames = {
   key: 'key'
 }
 
-const expandedKeys = ref<string[]>([])
+const modalVisible = ref(false)
+const modalExpandedKeys = ref<string[]>([])
 
 // 获取角色颜色
 const getRoleColor = (role: string) => {
@@ -167,15 +183,13 @@ const getIconColor = (node: TreeNode) => {
   }
 }
 
-// 处理节点选择
-const handleSelect = (selectedKeys: string[], { node, selected }: any) => {
-  if (selected && node.dataRef) {
-    emit('select', node.dataRef)
-  }
+// 处理模态框树节点展开/折叠
+const handleModalExpand = (keys: string[]) => {
+  modalExpandedKeys.value = keys
 }
 
-// 展开全部节点
-const expandAll = () => {
+// 展开模态框全部节点
+const expandModalAll = () => {
   const getAllKeys = (nodes: TreeNode[]): string[] => {
     let keys: string[] = []
     nodes.forEach(node => {
@@ -186,20 +200,31 @@ const expandAll = () => {
     })
     return keys
   }
-  expandedKeys.value = getAllKeys(props.treeData)
+  modalExpandedKeys.value = getAllKeys(props.modalTreeData)
 }
 
-// 折叠全部节点
-const collapseAll = () => {
-  expandedKeys.value = []
+// 折叠模态框全部节点
+const collapseModalAll = () => {
+  modalExpandedKeys.value = []
 }
 
-// 监听树数据变化，自动展开第一层
-watch(() => props.treeData, (newData) => {
-  if (newData.length > 0 && props.defaultExpandAll) {
-    expandAll()
-  }
-}, { immediate: true })
+// 打开模态框
+const openModal = () => {
+  modalVisible.value = true
+  // 默认展开所有节点
+  expandModalAll()
+}
+
+// 关闭模态框
+const closeModal = () => {
+  modalVisible.value = false
+}
+
+// 暴露方法给父组件
+defineExpose({
+  openModal,
+  closeModal
+})
 </script>
 
 <style scoped>

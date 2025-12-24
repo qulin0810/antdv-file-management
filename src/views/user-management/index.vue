@@ -35,28 +35,17 @@
       @cancel="handleEditCancel"
     />
 
-    <!-- 用户层级关系模态框 -->
-    <a-modal
-      v-model:visible="hierarchyVisible"
-      :title="hierarchyTitle"
-      width="800px"
-      :footer="null"
-      :destroy-on-close="true"
-    >
-      <UserHierarchyTree
-        :tree-data="hierarchyTreeData"
-        :title="`${selectedUser?.username} 的层级关系`"
-        :default-expand-all="true"
-        :show-line="true"
-        :show-icon="true"
-        @select="handleTreeSelect"
-      />
-    </a-modal>
+    <!-- 用户层级关系模态框组件 -->
+    <UserHierarchyTree
+      ref="hierarchyTreeRef"
+      :modal-title="hierarchyTitle"
+      :modal-tree-data="hierarchyTreeData"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, computed } from 'vue'
+import { reactive, ref, onMounted, computed, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UserSearch from './components/UserSearch.vue'
 import UserList from './components/UserList.vue'
@@ -79,6 +68,7 @@ const hierarchyVisible = ref(false)
 const selectedUser = ref<User | null>(null)
 const editForm = reactive<UserFormData>(createEmptyUserFormData())
 const currentUserList = ref<User[]>([])
+const hierarchyTreeRef = ref<InstanceType<typeof UserHierarchyTree> | null>(null)
 const pagination = reactive<Pagination>({
   current: 1,
   pageSize: 10,
@@ -435,6 +425,12 @@ const handleReupload = (record: User) => {
 const handleViewHierarchy = (record: User) => {
   selectedUser.value = record
   hierarchyVisible.value = true
+  // 使用 nextTick 确保组件已渲染
+  nextTick(() => {
+    if (hierarchyTreeRef.value) {
+      hierarchyTreeRef.value.openModal()
+    }
+  })
 }
 
 // 处理树节点选择
