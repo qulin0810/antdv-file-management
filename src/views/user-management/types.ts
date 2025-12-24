@@ -6,6 +6,15 @@ export enum SubmitStatus {
   REUPLOAD = 4     // 重新上传
 }
 
+// 角色枚举定义
+export enum UserRole {
+  ADMIN = 'admin',
+  USER_ADMIN = 'useradmin',
+  GUEST_ADMIN = 'guestadmin',
+  USER = 'user',
+  GUEST = 'guest'
+}
+
 export interface User {
   key: string
   username: string
@@ -27,6 +36,8 @@ export interface User {
   hobbiesDisplay?: HobbyItem[] // 爱好显示格式（回显格式）
   books?: BookItem[]           // 书籍数组（创建/提交格式）
   booksDisplay?: BookDisplayItem[] // 书籍显示格式（回显格式）
+  parentAdmin?: string         // 所属管理员（useradmin 或 guestadmin 的 username）
+  adminType?: 'useradmin' | 'guestadmin' // 管理员类型（如果用户是管理员）
 }
 
 // 爱好显示项接口
@@ -74,6 +85,31 @@ export interface UserFormData {
   books?: BookItem[]           // 书籍数组（创建/提交格式）
   booksDisplay?: BookDisplayItem[] // 书籍显示格式（回显格式）
   modificationTime?: number    // 修改时间（时间戳）
+  parentAdmin?: string         // 所属管理员
+  adminType?: 'useradmin' | 'guestadmin' // 管理员类型
+}
+
+// 树节点接口，用于显示层级关系
+export interface TreeNode {
+  key: string
+  title: string
+  username: string
+  role: string
+  status: string
+  email?: string
+  icon?: string
+  children?: TreeNode[]
+  isLeaf?: boolean
+  parentKey?: string
+}
+
+// 层级关系数据接口
+export interface HierarchyData {
+  admin: TreeNode
+  userAdmins: TreeNode[]
+  guestAdmins: TreeNode[]
+  users: TreeNode[]
+  guests: TreeNode[]
 }
 
 export const createEmptyUserFormData = (): UserFormData => ({
@@ -86,5 +122,7 @@ export const createEmptyUserFormData = (): UserFormData => ({
   richTextContent: '',
   hobbies: [],                 // 初始化空数组
   books: [],                   // 初始化书籍空数组
-  modificationTime: undefined  // 初始化修改时间
+  modificationTime: undefined, // 初始化修改时间
+  parentAdmin: undefined,
+  adminType: undefined
 })

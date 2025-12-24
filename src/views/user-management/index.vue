@@ -20,6 +20,7 @@
         @table-change="handleTableChange"
         @retry="handleRetry"
         @reupload="handleReupload"
+        @view-hierarchy="handleViewHierarchy"
       />
     </a-card>
 
@@ -33,17 +34,37 @@
       @ok="handleEditOk"
       @cancel="handleEditCancel"
     />
+
+    <!-- 用户层级关系模态框 -->
+    <a-modal
+      v-model:visible="hierarchyVisible"
+      :title="hierarchyTitle"
+      width="800px"
+      :footer="null"
+      :destroy-on-close="true"
+    >
+      <UserHierarchyTree
+        :tree-data="hierarchyTreeData"
+        :title="`${selectedUser?.username} 的层级关系`"
+        :default-expand-all="true"
+        :show-line="true"
+        :show-icon="true"
+        @select="handleTreeSelect"
+      />
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UserSearch from './components/UserSearch.vue'
 import UserList from './components/UserList.vue'
 import UserFormModal from './components/UserFormModal.vue'
-import type { User, UserFormData, Pagination } from './types'
-import { createEmptyUserFormData, SubmitStatus } from './types'
+import UserHierarchyTree from './components/UserHierarchyTree.vue'
+import type { User, UserFormData, Pagination, TreeNode } from './types'
+import { createEmptyUserFormData, SubmitStatus, UserRole } from './types'
+import { hierarchicalUserData } from './temp-data'
 
 const { t } = useI18n()
 
@@ -54,6 +75,8 @@ defineOptions({
 const loading = ref(false)
 const editVisible = ref(false)
 const isEdit = ref(false)
+const hierarchyVisible = ref(false)
+const selectedUser = ref<User | null>(null)
 const editForm = reactive<UserFormData>(createEmptyUserFormData())
 const currentUserList = ref<User[]>([])
 const pagination = reactive<Pagination>({
@@ -70,6 +93,17 @@ const pagination = reactive<Pagination>({
       return `${total} ${total === 1 ? 'record' : 'records'}`
     }
   }
+})
+
+// 层级关系相关
+const hierarchyTitle = computed(() => {
+  if (!selectedUser.value) return '用户层级关系'
+  return `${selectedUser.value.username} 的层级关系`
+})
+
+const hierarchyTreeData = computed(() => {
+  if (!selectedUser.value) return []
+  return buildUserHierarchyTree(selectedUser.value)
 })
 // 当前搜索参数
 const currentSearchParams = ref<{ username: string; email: string; job?: number; status?: string; role?: string; submitStatus?: SubmitStatus; pet?: string }>({
@@ -96,264 +130,7 @@ const petOptions = [
   { label: '小狗', value: '小狗' }
 ]
 
-const allUserList = ref<User[]>([
-  {
-    key: '1',
-    username: 'admin',
-    email: 'admin@example.com',
-    role: 'admin',
-    job: 2, // IT
-    pet: '小猫',
-    status: 'active',
-    submitStatus: SubmitStatus.SUCCESS,
-    createTime: '2024-01-15 10:30',
-    modificationTime: 1705311000000, // 2024-01-15 10:30
-    department: '技术部',
-    position: '系统管理员',
-    phone: '13800138001',
-    address: '北京市朝阳区建国门外大街1号',
-    remark: '系统管理员，负责系统维护',
-    richTextContent: '<p>系统管理员账户，拥有最高权限。</p><p>负责系统维护和用户管理。</p>',
-    hobbies: ['打球', '游泳'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '打球' },
-      { id: 2, hobby: '游泳' }
-    ],
-    books: [
-      { id: 1, bookName: 'JavaScript高级程序设计', author: 'Nicholas C. Zakas' },
-      { id: 2, bookName: 'Vue.js设计与实现', author: '霍春阳' }
-    ],
-    booksDisplay: [
-      { id: 1, bookName: 'JavaScript高级程序设计', author: 'Nicholas C. Zakas' },
-      { id: 2, bookName: 'Vue.js设计与实现', author: '霍春阳' }
-    ]
-  },
-  {
-    key: '2',
-    username: 'user1',
-    email: 'user1@example.com',
-    role: 'user',
-    job: 1, // 老师
-    pet: '小狗',
-    status: 'active',
-    submitStatus: SubmitStatus.FAILED,
-    createTime: '2024-01-16 14:20',
-    modificationTime: 1705400400000, // 2024-01-16 14:20
-    department: '教学部',
-    position: '高级讲师',
-    phone: '13800138002',
-    address: '上海市浦东新区陆家嘴金融中心',
-    remark: '负责前端开发课程教学',
-    richTextContent: '<p>前端开发讲师，擅长Vue.js和React。</p>',
-    hobbies: ['阅读', '写作'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '阅读' },
-      { id: 2, hobby: '写作' }
-    ],
-    books: [
-      { id: 1, bookName: 'React进阶之路', author: '徐超' },
-      { id: 2, bookName: 'TypeScript编程', author: 'Boris Cherny' }
-    ],
-    booksDisplay: [
-      { id: 1, bookName: 'React进阶之路', author: '徐超' },
-      { id: 2, bookName: 'TypeScript编程', author: 'Boris Cherny' }
-    ]
-  },
-  {
-    key: '3',
-    username: 'user2',
-    email: 'user2@example.com',
-    role: 'user',
-    job: 3, // 医生
-    pet: '小猫',
-    status: 'inactive',
-    submitStatus: SubmitStatus.PROCESSING,
-    createTime: '2024-01-17 09:15',
-    modificationTime: 1705482900000, // 2024-01-17 09:15
-    department: '医疗部',
-    position: '主治医师',
-    phone: '13800138003',
-    address: '广州市天河区珠江新城',
-    remark: '内科主治医师，擅长心血管疾病',
-    richTextContent: '<p>心血管内科专家，拥有10年临床经验。</p>',
-    hobbies: ['跑步', '健身'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '跑步' },
-      { id: 2, hobby: '健身' }
-    ],
-    books: [
-      { id: 1, bookName: '算法导论', author: 'Thomas H. Cormen' },
-      { id: 2, bookName: '设计模式', author: 'Erich Gamma' }
-    ],
-    booksDisplay: [
-      { id: 1, bookName: '算法导论', author: 'Thomas H. Cormen' },
-      { id: 2, bookName: '设计模式', author: 'Erich Gamma' }
-    ]
-  },
-  {
-    key: '4',
-    username: 'guest1',
-    email: 'guest1@example.com',
-    role: 'guest',
-    job: 4, // 工程师
-    pet: '小狗',
-    status: 'active',
-    submitStatus: SubmitStatus.REUPLOAD,
-    createTime: '2024-01-18 16:45',
-    modificationTime: 1705581900000, // 2024-01-18 16:45
-    department: '研发部',
-    position: '高级工程师',
-    phone: '13800138004',
-    address: '深圳市南山区科技园',
-    remark: '负责后端系统架构设计',
-    richTextContent: '<p>后端架构师，精通微服务和分布式系统。</p>',
-    hobbies: ['编程', '游戏'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '编程' },
-      { id: 2, hobby: '游戏' }
-    ],
-    books: [],
-    booksDisplay: []
-  },
-  {
-    key: '5',
-    username: 'guest2',
-    email: 'guest2@example.com',
-    role: 'guest',
-    job: 5, // 设计师
-    pet: '小猫',
-    status: 'active',
-    submitStatus: SubmitStatus.SUCCESS,
-    createTime: '2024-01-19 11:30',
-    modificationTime: 1705656600000, // 2024-01-19 11:30
-    department: '设计部',
-    position: 'UI设计师',
-    phone: '13800138005',
-    address: '杭州市西湖区文三路',
-    remark: '负责产品界面设计和用户体验优化',
-    richTextContent: '<p>UI/UX设计师，专注于用户体验设计。</p>',
-    hobbies: ['绘画', '摄影'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '绘画' },
-      { id: 2, hobby: '摄影' }
-    ]
-  },
-  {
-    key: '6',
-    username: 'manager1',
-    email: 'manager1@example.com',
-    role: 'admin',
-    job: 2, // IT
-    pet: '小狗',
-    status: 'active',
-    submitStatus: SubmitStatus.FAILED,
-    createTime: '2024-01-20 08:45',
-    modificationTime: 1705733100000, // 2024-01-20 08:45
-    department: '管理部',
-    position: '项目经理',
-    phone: '13800138006',
-    address: '成都市武侯区天府软件园',
-    remark: '负责项目管理与团队协调',
-    richTextContent: '<p>项目经理，擅长敏捷开发和团队管理。</p>',
-    hobbies: ['登山', '旅行'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '登山' },
-      { id: 2, hobby: '旅行' }
-    ]
-  },
-  {
-    key: '7',
-    username: 'teacher1',
-    email: 'teacher1@example.com',
-    role: 'user',
-    job: 1, // 老师
-    pet: '小猫',
-    status: 'active',
-    submitStatus: SubmitStatus.PROCESSING,
-    createTime: '2024-01-21 13:20',
-    modificationTime: 1705821600000, // 2024-01-21 13:20
-    department: '教学部',
-    position: '课程顾问',
-    phone: '13800138007',
-    address: '南京市鼓楼区新街口',
-    remark: '负责课程咨询和学员服务',
-    richTextContent: '<p>课程顾问，提供专业的学习建议。</p>',
-    hobbies: ['音乐', '电影'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '音乐' },
-      { id: 2, hobby: '电影' }
-    ]
-  },
-  {
-    key: '8',
-    username: 'doctor1',
-    email: 'doctor1@example.com',
-    role: 'user',
-    job: 3, // 医生
-    pet: '小狗',
-    status: 'active',
-    submitStatus: SubmitStatus.SUCCESS,
-    createTime: '2024-01-22 10:15',
-    modificationTime: 1705904100000, // 2024-01-22 10:15
-    department: '医疗部',
-    position: '副主任医师',
-    phone: '13800138008',
-    address: '武汉市武昌区光谷',
-    remark: '外科副主任医师，擅长微创手术',
-    richTextContent: '<p>外科专家，精通微创手术技术。</p>',
-    hobbies: ['瑜伽', '冥想'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '瑜伽' },
-      { id: 2, hobby: '冥想' }
-    ]
-  },
-  {
-    key: '9',
-    username: 'engineer1',
-    email: 'engineer1@example.com',
-    role: 'user',
-    job: 4, // 工程师
-    pet: '小猫',
-    status: 'inactive',
-    submitStatus: SubmitStatus.REUPLOAD,
-    createTime: '2024-01-23 15:30',
-    modificationTime: 1705995000000, // 2024-01-23 15:30
-    department: '研发部',
-    position: '测试工程师',
-    phone: '13800138009',
-    address: '西安市雁塔区高新区',
-    remark: '负责软件测试和质量保证',
-    richTextContent: '<p>测试工程师，专注于自动化测试。</p>',
-    hobbies: ['阅读', '下棋'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '阅读' },
-      { id: 2, hobby: '下棋' }
-    ]
-  },
-  {
-    key: '10',
-    username: 'designer1',
-    email: 'designer1@example.com',
-    role: 'user',
-    job: 5, // 设计师
-    pet: '小狗',
-    status: 'active',
-    submitStatus: SubmitStatus.FAILED,
-    createTime: '2024-01-24 11:45',
-    modificationTime: 1706075100000, // 2024-01-24 11:45
-    department: '设计部',
-    position: '交互设计师',
-    phone: '13800138010',
-    address: '重庆市渝北区光电园',
-    remark: '负责产品交互设计和原型制作',
-    richTextContent: '<p>交互设计师，专注于用户体验研究。</p>',
-    hobbies: ['设计', '手工'],
-    hobbiesDisplay: [
-      { id: 1, hobby: '设计' },
-      { id: 2, hobby: '手工' }
-    ]
-  }
-])
+const allUserList = ref<User[]>([...hierarchicalUserData])
 
 const handleSearch = (searchParams?: { username: string; email: string; job?: number; status?: string; role?: string; submitStatus?: SubmitStatus; pet?: string }) => {
   // 更新当前搜索参数
@@ -652,6 +429,236 @@ const handleReupload = (record: User) => {
       handleSearch()
     }, 2000)
   }
+}
+
+// 处理查看层级关系
+const handleViewHierarchy = (record: User) => {
+  selectedUser.value = record
+  hierarchyVisible.value = true
+}
+
+// 处理树节点选择
+const handleTreeSelect = (node: TreeNode) => {
+  console.log('选中节点:', node)
+  // 可以在这里添加选中节点的处理逻辑，比如跳转到用户详情等
+}
+
+// 构建用户层级关系树
+const buildUserHierarchyTree = (user: User): TreeNode[] => {
+  const treeNodes: TreeNode[] = []
+  
+  // 根据用户角色构建不同的层级结构
+  if (user.role === UserRole.ADMIN) {
+    // 如果是admin，显示完整的层级结构
+    const adminNode: TreeNode = {
+      key: user.key,
+      title: `${user.username} (系统管理员)`,
+      username: user.username,
+      role: UserRole.ADMIN,
+      status: user.status,
+      email: user.email,
+      children: []
+    }
+    
+    // 查找所有隶属于该admin的useradmin
+    const userAdmins = allUserList.value.filter(u =>
+      (u.role === UserRole.USER_ADMIN || u.adminType === 'useradmin') && u.parentAdmin === user.username
+    )
+    
+    // 查找所有隶属于该admin的guestadmin
+    const guestAdmins = allUserList.value.filter(u =>
+      (u.role === UserRole.GUEST_ADMIN || u.adminType === 'guestadmin') && u.parentAdmin === user.username
+    )
+    
+    // 构建useradmin节点
+    const userAdminNodes = userAdmins.map(admin => ({
+      key: admin.key,
+      title: `${admin.username} (用户管理员)`,
+      username: admin.username,
+      role: admin.role,
+      status: admin.status,
+      email: admin.email,
+      children: buildUserChildren(admin.username, 'user')
+    }))
+    
+    // 构建guestadmin节点
+    const guestAdminNodes = guestAdmins.map(admin => ({
+      key: admin.key,
+      title: `${admin.username} (访客管理员)`,
+      username: admin.username,
+      role: admin.role,
+      status: admin.status,
+      email: admin.email,
+      children: buildUserChildren(admin.username, 'guest')
+    }))
+    
+    adminNode.children = [...userAdminNodes, ...guestAdminNodes]
+    treeNodes.push(adminNode)
+    
+  } else if (user.role === UserRole.USER_ADMIN || user.adminType === 'useradmin') {
+    // 如果是useradmin，显示该管理员及其管理的用户，以及所属的admin
+    const userNode: TreeNode = {
+      key: user.key,
+      title: `${user.username} (用户管理员)`,
+      username: user.username,
+      role: user.role,
+      status: user.status,
+      email: user.email,
+      children: buildUserChildren(user.username, 'user')
+    }
+    
+    // 查找所属的admin
+    if (user.parentAdmin) {
+      const admin = allUserList.value.find(u => u.username === user.parentAdmin)
+      if (admin) {
+        const adminNode: TreeNode = {
+          key: admin.key,
+          title: `${admin.username} (系统管理员)`,
+          username: admin.username,
+          role: admin.role,
+          status: admin.status,
+          email: admin.email,
+          children: [userNode]
+        }
+        treeNodes.push(adminNode)
+      } else {
+        treeNodes.push(userNode)
+      }
+    } else {
+      treeNodes.push(userNode)
+    }
+    
+  } else if (user.role === UserRole.GUEST_ADMIN || user.adminType === 'guestadmin') {
+    // 如果是guestadmin，显示该管理员及其管理的访客，以及所属的admin
+    const guestNode: TreeNode = {
+      key: user.key,
+      title: `${user.username} (访客管理员)`,
+      username: user.username,
+      role: user.role,
+      status: user.status,
+      email: user.email,
+      children: buildUserChildren(user.username, 'guest')
+    }
+    
+    // 查找所属的admin
+    if (user.parentAdmin) {
+      const admin = allUserList.value.find(u => u.username === user.parentAdmin)
+      if (admin) {
+        const adminNode: TreeNode = {
+          key: admin.key,
+          title: `${admin.username} (系统管理员)`,
+          username: admin.username,
+          role: admin.role,
+          status: admin.status,
+          email: admin.email,
+          children: [guestNode]
+        }
+        treeNodes.push(adminNode)
+      } else {
+        treeNodes.push(guestNode)
+      }
+    } else {
+      treeNodes.push(guestNode)
+    }
+    
+  } else if (user.role === UserRole.USER || user.role === UserRole.GUEST) {
+    // 如果是普通用户或访客，显示完整的层级链：user → admin → admin
+    const leafNode: TreeNode = {
+      key: user.key,
+      title: user.username,
+      username: user.username,
+      role: user.role,
+      status: user.status,
+      email: user.email,
+      isLeaf: true
+    }
+    
+    // 查找所属的管理员
+    if (user.parentAdmin) {
+      const admin = allUserList.value.find(u => u.username === user.parentAdmin)
+      if (admin) {
+        const adminNode: TreeNode = {
+          key: admin.key,
+          title: `${admin.username} (${admin.adminType === 'useradmin' ? '用户管理员' : '访客管理员'})`,
+          username: admin.username,
+          role: admin.role,
+          status: admin.status,
+          email: admin.email,
+          children: [leafNode]
+        }
+        
+        // 查找管理员所属的admin
+        if (admin.parentAdmin) {
+          const topAdmin = allUserList.value.find(u => u.username === admin.parentAdmin)
+          if (topAdmin) {
+            const topAdminNode: TreeNode = {
+              key: topAdmin.key,
+              title: `${topAdmin.username} (系统管理员)`,
+              username: topAdmin.username,
+              role: topAdmin.role,
+              status: topAdmin.status,
+              email: topAdmin.email,
+              children: [adminNode]
+            }
+            treeNodes.push(topAdminNode)
+          } else {
+            treeNodes.push(adminNode)
+          }
+        } else {
+          treeNodes.push(adminNode)
+        }
+      } else {
+        treeNodes.push(leafNode)
+      }
+    } else {
+      treeNodes.push(leafNode)
+    }
+  }
+  
+  return treeNodes
+}
+
+// 构建用户子节点
+const buildUserChildren = (adminUsername: string, userType: 'user' | 'guest'): TreeNode[] => {
+  const children: TreeNode[] = []
+  
+  // 根据用户类型查找对应的用户
+  const targetRole = userType === 'user' ? UserRole.USER : UserRole.GUEST
+  const users = allUserList.value.filter(u =>
+    u.role === targetRole && u.parentAdmin === adminUsername
+  )
+  
+  // 如果没有找到直接关联的用户，显示一些示例数据
+  if (users.length === 0) {
+    const exampleUsers = userType === 'user'
+      ? ['user1', 'user2', 'user3']
+      : ['guest1', 'guest2', 'guest3']
+    
+    exampleUsers.forEach((username, index) => {
+      children.push({
+        key: `example-${userType}-${index}`,
+        title: username,
+        username: username,
+        role: targetRole,
+        status: 'active',
+        isLeaf: true
+      })
+    })
+  } else {
+    users.forEach(user => {
+      children.push({
+        key: user.key,
+        title: user.username,
+        username: user.username,
+        role: user.role,
+        status: user.status,
+        email: user.email,
+        isLeaf: true
+      })
+    })
+  }
+  
+  return children
 }
 
 onMounted(() => {

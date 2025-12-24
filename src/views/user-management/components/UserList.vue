@@ -71,6 +71,12 @@
               {{ t('userManagement.edit') }}
             </a-button>
             
+            <!-- 查看层级关系按钮 -->
+            <a-button type="link" size="small" @click="handleViewHierarchy(record)" style="color: #1890ff;">
+              <template #icon><eye-outlined /></template>
+              查看层级
+            </a-button>
+            
             <!-- 根据提交状态显示不同的操作按钮 -->
             <template v-if="record.submitStatus === SubmitStatus.FAILED">
               <a-button type="link" size="small" @click="handleRetry(record)" style="color: #ff4d4f;">
@@ -102,7 +108,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { UserAddOutlined, UserOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { 
+  UserAddOutlined, 
+  UserOutlined, 
+  UploadOutlined, 
+  DownloadOutlined,
+  EyeOutlined
+} from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { User, Pagination } from '../types'
 import { SubmitStatus } from '../types'
@@ -133,6 +145,7 @@ const emit = defineEmits<{
   'table-change': [pag: any, filters: any, sorter: any, extra: any]
   'reupload': [record: User]
   'retry': [record: User]
+  'view-hierarchy': [record: User]
 }>()
 
 // 列配置 - 完整版本，包含操作列
@@ -205,7 +218,7 @@ const columns = computed(() => [
   {
     title: t('userManagement.action'),
     key: 'action',
-    width: 250,
+    width: 280,
     fixed: 'right'
   }
 ])
@@ -248,7 +261,9 @@ const getRoleColor = (role: string) => {
   const colors: Record<string, string> = {
     admin: 'red',
     user: 'blue',
-    guest: 'orange'
+    guest: 'orange',
+    useradmin: 'volcano',
+    guestadmin: 'orange'
   }
   return colors[role] || 'default'
 }
@@ -294,6 +309,10 @@ const handleAdd = () => {
 
 const handleEdit = (record: User) => {
   emit('edit', record)
+}
+
+const handleViewHierarchy = (record: User) => {
+  emit('view-hierarchy', record)
 }
 
 const handleStatusChange = (record: User, newStatus: string) => {
