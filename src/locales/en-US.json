@@ -110,6 +110,12 @@
     "fullName": "{firstName} {lastName}",
     "part1": "Hello",
     "part2": "World",
-    "combinedMessage": "{part1} {part2}"
+    "combinedMessage": "{part1} {part2}",
+    "bookNameRequired": "Book name for book #{index} cannot be empty",
+    "bookDisplayNameRequired": "Display name for book #{index} cannot be empty",
+    "bookNameDuplicate": "Book name '{bookName}' is duplicated",
+    "bookDisplayNameDuplicate": "Display name '{displayName}' is duplicated",
+    "bookValidationErrors": "Book validation failed",
+    "booksRequired": "At least one book is required"
   }
 }

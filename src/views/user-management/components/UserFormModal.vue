@@ -87,8 +87,11 @@
         </div>
       </a-form-item>
 
-      <!-- 书籍输入区域 -->
-      <a-form-item :label="t('userManagement.books')">
+      <!-- 书籍输入区域（必填项） -->
+      <a-form-item
+        :label="t('userManagement.books')"
+        required
+      >
         <div class="books-container">
           <div
             v-for="(book, index) in books"
@@ -100,7 +103,7 @@
               :placeholder="t('userManagement.selectBook')"
               class="book-select"
               :options="bookOptions"
-              @change="(value) => handleBookSelectChange(value, index)"
+              @change="(value: number) => handleBookSelectChange(value, index)"
             />
             <a-input
               v-model:value="book.bookDisplayName"
@@ -147,6 +150,7 @@ import { reactive, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import dayjs from 'dayjs'
+import { message } from 'ant-design-vue'
 import type { UserFormData, HobbyItem, BookItem } from '../types'
 import { createEmptyUserFormData } from '../types'
 import RichTextEditor from '@/views/list-component/component/RichTextEditor.vue'
@@ -200,13 +204,13 @@ const books = computed({
 
 // 书籍选项
 const bookOptions = [
-  { label: 'JavaScript高级程序设计', value: 'JavaScript高级程序设计' },
-  { label: 'Vue.js设计与实现', value: 'Vue.js设计与实现' },
-  { label: 'React进阶之路', value: 'React进阶之路' },
-  { label: 'TypeScript编程', value: 'TypeScript编程' },
-  { label: '算法导论', value: '算法导论' },
-  { label: '设计模式', value: '设计模式' },
-  { label: '其他', value: '其他' }
+  { label: 'JavaScript高级程序设计', value: 1 },
+  { label: 'Vue.js设计与实现', value: 2 },
+  { label: 'React进阶之路', value: 3 },
+  { label: 'TypeScript编程', value: 4 },
+  { label: '算法导论', value: 5 },
+  { label: '设计模式', value: 6 },
+  { label: '其他', value: 7 }
 ]
 
 // 修改时间的日期对象（用于DatePicker）
@@ -253,6 +257,62 @@ const rules = {
   modificationTime: [
     { required: false, message: t('userManagement.selectModificationTime'), trigger: 'change' }
   ]
+}
+
+// 书籍验证函数
+const validateBooks = (): boolean => {
+  const bookList = books.value
+  const errors: string[] = []
+
+  // 0. 至少需要一本书（必填项）
+  if (bookList.length === 0) {
+    errors.push(t('userManagement.booksRequired'))
+  }
+
+  // 检查每个书籍项
+  bookList.forEach((book, index) => {
+    // 1. bookName必填
+    if (!book.bookName?.trim()) {
+      errors.push(t('userManagement.bookNameRequired', { index: index + 1 }))
+    }
+
+    // 2. bookDisplayName必填（如果需要）
+    if (!book.bookDisplayName?.trim()) {
+      errors.push(t('userManagement.bookDisplayNameRequired', { index: index + 1 }))
+    }
+  })
+
+  // 3. bookName不能重复
+  const bookNameSet = new Set<string>()
+  bookList.forEach((book, index) => {
+    if (book.bookName?.trim()) {
+      if (bookNameSet.has(book.bookName.trim())) {
+        errors.push(t('userManagement.bookNameDuplicate', { bookName: book.bookName }))
+      } else {
+        bookNameSet.add(book.bookName.trim())
+      }
+    }
+  })
+
+  // 4. bookDisplayName不能重复
+  const bookDisplayNameSet = new Set<string>()
+  bookList.forEach((book, index) => {
+    if (book.bookDisplayName?.trim()) {
+      if (bookDisplayNameSet.has(book.bookDisplayName.trim())) {
+        errors.push(t('userManagement.bookDisplayNameDuplicate', { displayName: book.bookDisplayName }))
+      } else {
+        bookDisplayNameSet.add(book.bookDisplayName.trim())
+      }
+    }
+  })
+
+  if (errors.length > 0) {
+    // 显示错误消息
+    const errorMessage = t('userManagement.bookValidationErrors') + '\n' + errors.join('\n')
+    message.error(errorMessage, 5)
+    return false
+  }
+  return true
 }
 
 // 将爱好显示格式转换为提交格式
@@ -324,11 +384,12 @@ const removeBook = (index: number) => {
   books.value.splice(index, 1)
 }
 
-const handleBookSelectChange = (value: string, index: number) => {
-  // 当选择书籍时，更新bookDisplayName为相同的值
+const handleBookSelectChange = (value: number, index: number) => {
+  // 当选择书籍时，更新bookDisplayName为对应的标签
   const book = books.value[index]
   if (book) {
-    book.bookDisplayName = value
+    const selectedOption = bookOptions.find(opt => opt.value === value)
+    book.bookDisplayName = selectedOption?.label || String(value)
   }
   console.log(`选择了书籍: ${value}，索引: ${index}`)
 }
@@ -336,6 +397,11 @@ const handleBookSelectChange = (value: string, index: number) => {
 const handleOk = async () => {
   try {
     await formRef.value.validate()
+    
+    // 验证书籍数组
+    if (!validateBooks()) {
+      return
+    }
     
     // 准备提交的数据
     const submitData = { ...localFormData }
@@ -448,9 +514,3 @@ const resetForm = () => {
   margin-top: 8px;
 }
 </style>
-
-<script lang="ts">
-export default {
-  name: 'UserFormModal'
-}
-</script>
