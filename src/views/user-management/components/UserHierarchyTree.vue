@@ -30,7 +30,7 @@
           :show-icon="true"
           :block-node="true"
           :expanded-keys="modalExpandedKeys"
-          :auto-expand-parent="true"
+          :auto-expand-parent="false"
           @expand="handleModalExpand"
         >
           <template #title="{ title, dataRef }">
@@ -190,17 +190,18 @@ const handleModalExpand = (keys: string[]) => {
 
 // 展开模态框全部节点
 const expandModalAll = () => {
-  const getAllKeys = (nodes: TreeNode[]): string[] => {
+  const getAllExpandableKeys = (nodes: TreeNode[]): string[] => {
     let keys: string[] = []
     nodes.forEach(node => {
-      keys.push(node.key)
+      // 只有有子节点的节点才需要展开
       if (node.children && node.children.length > 0) {
-        keys = keys.concat(getAllKeys(node.children))
+        keys.push(node.key)
+        keys = keys.concat(getAllExpandableKeys(node.children))
       }
     })
     return keys
   }
-  modalExpandedKeys.value = getAllKeys(props.modalTreeData)
+  modalExpandedKeys.value = getAllExpandableKeys(props.modalTreeData)
 }
 
 // 折叠模态框全部节点
