@@ -21,9 +21,10 @@
             </a-button>
           </a-space>
         </div>
-        
+        {{selectedKeys}}
         <a-tree
           v-if="modalTreeData.length > 0"
+          :key="treeKey"
           :tree-data="modalTreeData"
           :field-names="fieldNames"
           :show-line="true"
@@ -31,7 +32,10 @@
           :block-node="true"
           :expanded-keys="modalExpandedKeys"
           :auto-expand-parent="false"
+          :selected-keys="selectedKeys"
+          :selectable="true"
           @expand="handleModalExpand"
+          @select="handleTreeSelect"
         >
           <template #title="{ title, dataRef }">
             <div class="tree-node-title">
@@ -83,6 +87,7 @@ interface Props {
   showIcon?: boolean
   modalTitle?: string
   modalTreeData?: TreeNode[]
+  selectedKey?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -92,7 +97,8 @@ const props = withDefaults(defineProps<Props>(), {
   showLine: true,
   showIcon: true,
   modalTitle: '用户层级关系',
-  modalTreeData: () => []
+  modalTreeData: () => [],
+  selectedKey: undefined
 })
 
 const emit = defineEmits<{
@@ -107,6 +113,40 @@ const fieldNames = {
 
 const modalVisible = ref(false)
 const modalExpandedKeys = ref<string[]>([])
+
+// 监听模态框显示状态，关闭时清空展开状态
+watch(modalVisible, (newVal) => {
+  if (!newVal) {
+    // 模态框关闭时清空展开的节点
+    modalExpandedKeys.value = []
+  }
+})
+
+// 生成树组件的唯一键，确保数据更新时重新渲染
+const treeKey = computed(() => {
+  // 基于树数据生成一个简单的哈希键
+  if (!props.modalTreeData || props.modalTreeData.length === 0) {
+    return 'empty'
+  }
+  // 使用所有节点的key拼接作为唯一标识
+  const collectKeys = (nodes: TreeNode[]): string[] => {
+    let keys: string[] = []
+    nodes.forEach(node => {
+      keys.push(node.key)
+      if (node.children && node.children.length > 0) {
+        keys = keys.concat(collectKeys(node.children))
+      }
+    })
+    return keys
+  }
+  return collectKeys(props.modalTreeData).join('-')
+})
+
+// 选中的节点keys
+const selectedKeys = computed(() => {
+  if (!props.selectedKey) return []
+  return [props.selectedKey]
+})
 
 // 获取角色颜色
 const getRoleColor = (role: string) => {
@@ -188,6 +228,27 @@ const handleModalExpand = (keys: string[]) => {
   modalExpandedKeys.value = keys
 }
 
+// 处理树节点选择
+const handleTreeSelect = (selectedKeys: string[], { node }: { node: any }) => {
+  // 找到对应的 TreeNode
+  const findNode = (nodes: TreeNode[]): TreeNode | undefined => {
+    for (const n of nodes) {
+      if (n.key === selectedKeys[0]) {
+        return n
+      }
+      if (n.children && n.children.length > 0) {
+        const found = findNode(n.children)
+        if (found) return found
+      }
+    }
+    return undefined
+  }
+  const selectedNode = findNode(props.modalTreeData)
+  if (selectedNode) {
+    emit('select', selectedNode)
+  }
+}
+
 // 展开模态框全部节点
 const expandModalAll = () => {
   const getAllExpandableKeys = (nodes: TreeNode[]): string[] => {
@@ -263,5 +324,16 @@ defineExpose({
 
 :deep(.ant-tree-node-content-wrapper) {
   padding: 2px 4px;
+}
+
+/* 选中节点高亮样式 */
+:deep(.ant-tree-node-selected) {
+  background-color: #e6f7ff !important;
+  border-radius: 4px;
+}
+
+:deep(.ant-tree-treenode-selected) .tree-node-title .username {
+  font-weight: 600;
+  color: #1890ff;
 }
 </style>

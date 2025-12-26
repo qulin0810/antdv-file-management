@@ -103,6 +103,8 @@
               :placeholder="t('userManagement.selectBook')"
               class="book-select"
               :options="bookOptions"
+              show-search
+              :filter-option="filterBookOption"
               @change="(value: number) => handleBookSelectChange(value, index)"
             />
             <a-input
@@ -212,6 +214,11 @@ const bookOptions = [
   { label: '设计模式', value: 6 },
   { label: '其他', value: 7 }
 ]
+
+// 书籍搜索过滤函数
+const filterBookOption = (input: string, option: any) => {
+  return option.label.toLowerCase().includes(input.toLowerCase())
+}
 
 // 修改时间的日期对象（用于DatePicker）
 const modificationTimeDate = ref<string | null>(null)

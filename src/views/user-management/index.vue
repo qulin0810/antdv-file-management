@@ -40,6 +40,7 @@
       ref="hierarchyTreeRef"
       :modal-title="hierarchyTitle"
       :modal-tree-data="hierarchyTreeData"
+      :selected-key="selectedUser?.key"
     />
   </div>
 </template>
